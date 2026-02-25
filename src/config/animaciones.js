@@ -3,7 +3,8 @@
  * Centralizar aquí evita repetir los mismos valores en cada componente JSX.
  */
 
-// ── Variantes de entrada/salida de tabs ─────────────────────────────────────
+// Variantes de entrada y salida de tabs
+
 export const SLIDE_IN_RIGHT = {
     initial: { opacity: 0, x: 20 },
     animate: { opacity: 1, x: 0 },

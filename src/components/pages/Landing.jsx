@@ -29,7 +29,7 @@ export default function Landing() {
             Regístrate para unirte a la conversación más vibrante de la web.
           </p>
           <div className="hero-btns">
-            <Link to="/auth" className="btn-primary">Empezar Ahora</Link>
+            <Link to="/entrar" className="btn-primary">Empezar Ahora</Link>
             <a href="#features" className="btn-secondary">Saber más</a>
           </div>
         </motion.div>

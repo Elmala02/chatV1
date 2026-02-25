@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap');
 
 :root {
-  /* Light Mode Tokens */
+  /* Tokens Modo Claro */
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-accent: rgba(255, 255, 255, 0.7);
@@ -20,7 +20,7 @@
 }
 
 [data-theme='dark'] {
-  /* Dark Mode Tokens */
+  /* Tokens Modo Oscuro */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-accent: rgba(30, 41, 59, 0.7);
@@ -102,7 +102,7 @@ textarea:focus {
   background: var(--bg-primary);
 }
 
-/* Animations */
+/* Animaciones */
 @keyframes float {
   0% {
     transform: translateY(0px);
@@ -121,7 +121,7 @@ textarea:focus {
   animation: float 4s ease-in-out infinite;
 }
 
-/* Scrollbar */
+/* Barra de desplazamiento */
 ::-webkit-scrollbar {
   width: 8px;
 }

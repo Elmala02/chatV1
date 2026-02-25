@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Send, UserPlus, Heart, Check, X, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,9 +13,10 @@ import { SLIDE_IN_RIGHT, EXPAND_HEIGHT } from '../../config/animaciones';
 import { SIDEBAR_TABS } from '../../config/uiConfig';
 
 export default function ChatBoard({ initialTab = 'chat' }) {
+  const navigate = useNavigate();
   const {
     user, registeredUsers, messages, addPost, likePost, addComment,
-    sendRequest, acceptRequest, privateMessages, theme
+    sendRequest, acceptRequest, theme
   } = useApp();
   const [newMessage, setNewMessage] = useState('');
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -22,6 +24,10 @@ export default function ChatBoard({ initialTab = 'chat' }) {
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [activeComments, setActiveComments] = useState({});
   const [commentText, setCommentText] = useState({});
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const handleSendPost = (e) => {
     e.preventDefault();
@@ -44,6 +50,12 @@ export default function ChatBoard({ initialTab = 'chat' }) {
   const handleTabChange = (tab, clearFriend) => {
     setActiveTab(tab);
     if (clearFriend) setSelectedFriend(null);
+
+    if (tab === 'users') {
+      navigate('/usuarios');
+    } else {
+      navigate('/chat');
+    }
   };
 
   const filteredUsers = registeredUsers.filter(u =>

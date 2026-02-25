@@ -10,13 +10,14 @@ export default function PrivateChat({ friend, onBack }) {
     const scrollRef = useRef(null);
 
     const room = [user.id, friend.id].sort().join('_');
-    const messages = privateMessages[room] || [];
+    const roomMessages = privateMessages[room];
+    const messages = roomMessages || [];
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [roomMessages]);
 
     const handleSend = (e) => {
         e.preventDefault();

@@ -16,7 +16,7 @@ const ElectricBorder = ({
   const timeRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
 
-  // Noise functions
+  // funciones de ruido
   const random = useCallback(x => {
     return (Math.sin(x * 12.9898) * 43758.5453) % 1;
   }, []);
@@ -80,56 +80,56 @@ const ElectricBorder = ({
 
       let accumulated = 0;
 
-      // Top edge
+      // Borde superior
       if (distance <= accumulated + straightWidth) {
         const progress = (distance - accumulated) / straightWidth;
         return { x: left + radius + progress * straightWidth, y: top };
       }
       accumulated += straightWidth;
 
-      // Top-right corner
+      // Esquina superior derecha
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
         return getCornerPoint(left + width - radius, top + radius, radius, -Math.PI / 2, Math.PI / 2, progress);
       }
       accumulated += cornerArc;
 
-      // Right edge
+      // Borde derecho
       if (distance <= accumulated + straightHeight) {
         const progress = (distance - accumulated) / straightHeight;
         return { x: left + width, y: top + radius + progress * straightHeight };
       }
       accumulated += straightHeight;
 
-      // Bottom-right corner
+      // Esquina inferior derecha
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
         return getCornerPoint(left + width - radius, top + height - radius, radius, 0, Math.PI / 2, progress);
       }
       accumulated += cornerArc;
 
-      // Bottom edge
+      // Borde inferior
       if (distance <= accumulated + straightWidth) {
         const progress = (distance - accumulated) / straightWidth;
         return { x: left + width - radius - progress * straightWidth, y: top + height };
       }
       accumulated += straightWidth;
 
-      // Bottom-left corner
+      // Esquina inferior izquierda
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
         return getCornerPoint(left + radius, top + height - radius, radius, Math.PI / 2, Math.PI / 2, progress);
       }
       accumulated += cornerArc;
 
-      // Left edge
+      // Borde izquierdo
       if (distance <= accumulated + straightHeight) {
         const progress = (distance - accumulated) / straightHeight;
         return { x: left, y: top + height - radius - progress * straightHeight };
       }
       accumulated += straightHeight;
 
-      // Top-left corner
+      // Esquina superior izquierda
       const progress = (distance - accumulated) / cornerArc;
       return getCornerPoint(left + radius, top + radius, radius, Math.PI, Math.PI / 2, progress);
     },
@@ -144,7 +144,7 @@ const ElectricBorder = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Configuration
+    // Configuración
     const octaves = 10;
     const lacunarity = 1.6;
     const gain = 0.7;
@@ -159,7 +159,7 @@ const ElectricBorder = ({
       const width = rect.width + borderOffset * 2;
       const height = rect.height + borderOffset * 2;
 
-      // Use device pixel ratio for sharp rendering
+      // Usar la relación de píxeles del dispositivo para un renderizado nítido
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -179,7 +179,7 @@ const ElectricBorder = ({
       timeRef.current += deltaTime * speed;
       lastFrameTimeRef.current = currentTime;
 
-      // Clear canvas
+      // Limpiar lienzo
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -248,7 +248,7 @@ const ElectricBorder = ({
       animationRef.current = requestAnimationFrame(drawElectricBorder);
     };
 
-    // Handle resize
+    // Manejar redimensionamiento
     const resizeObserver = new ResizeObserver(() => {
       const newSize = updateSize();
       width = newSize.width;
@@ -256,7 +256,7 @@ const ElectricBorder = ({
     });
     resizeObserver.observe(container);
 
-    // Start animation
+    // Iniciar animación
     animationRef.current = requestAnimationFrame(drawElectricBorder);
 
     return () => {
