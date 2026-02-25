@@ -1,0 +1,146 @@
+.private-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-header {
+    padding: 1.2rem 2rem;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--bg-secondary);
+}
+
+.back-btn {
+    background: transparent;
+    color: var(--text-dim);
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+
+.back-btn:hover {
+    color: var(--primary);
+}
+
+.chat-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.chat-user-info h4 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--success);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--success);
+}
+
+.private-messages {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--bg-accent);
+}
+
+.p-msg {
+    max-width: 65%;
+    padding: 0.8rem 1.2rem;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.p-msg.received {
+    align-self: flex-start;
+    background: var(--bg-secondary);
+    border-bottom-left-radius: 4px;
+}
+
+.p-msg.sent {
+    align-self: flex-end;
+    background: var(--primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.p-msg span {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 0.4rem;
+    opacity: 0.7;
+    text-align: right;
+}
+
+.p-chat-input {
+    padding: 1.5rem 2rem;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    gap: 1rem;
+}
+
+.p-chat-input input {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px;
+    color: var(--text-primary);
+}
+
+.p-send-btn {
+    background: var(--primary);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.p-send-btn:hover {
+    transform: scale(1.05);
+}
+
+.empty-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    gap: 1rem;
+}
+
+.empty-chat p {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Indicador de cifrado en la cabecera del chat */
+.chat-secure-info {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-dim);
+}
+
+/* Ícono del estado vacío del chat */
+.empty-chat-icon {
+    opacity: 0.2;
+}
