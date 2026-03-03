@@ -10,12 +10,21 @@ import Landing from './components/pages/Landing'
 import Auth from './components/pages/Auth'
 import ChatBoard from './components/pages/ChatBoard'
 
+/**
+ * Componente que protege las rutas de la aplicación.
+ * Redirige a /auth si el usuario no ha iniciado sesión.
+ * @param {Object} props - Propiedades del componente.
+ * @param {React.ReactNode} props.children - Componentes protegidos.
+ */
 const ProtectedRoute = ({ children }) => {
   const { user } = useApp();
   if (!user) return <Navigate to="/auth" />;
   return children;
 };
 
+/**
+ * Componente principal que define la estructura y rutas de la aplicación.
+ */
 const App = () => {
   return (
     <>

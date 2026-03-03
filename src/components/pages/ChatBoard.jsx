@@ -11,6 +11,12 @@ import { getBalatraConfig } from '../../config/balatraTheme';
 import { SLIDE_IN_RIGHT, EXPAND_HEIGHT } from '../../config/animaciones';
 import { SIDEBAR_TABS } from '../../config/uiConfig';
 
+/**
+ * Componente principal del tablero de chat.
+ * Maneja el chat global, el blog social, la lista de amigos y las solicitudes.
+ * @param {Object} props - Propiedades del componente.
+ * @param {string} props.initialTab - La pestaña activa inicialmente ('chat', 'blog', 'private', 'users', 'requests').
+ */
 export default function ChatBoard({ initialTab = 'chat' }) {
   const {
     user, registeredUsers, messages, addPost, likePost, addComment,

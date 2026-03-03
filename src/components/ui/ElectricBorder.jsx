@@ -1,6 +1,17 @@
 import { useEffect, useRef, useCallback } from 'react';
 import '../../styles/components/ElectricBorder.css';
 
+/**
+ * Componente que crea un borde con efecto "eléctrico" animado usando Canvas y ruido 2D.
+ * @param {Object} props - Propiedades del componente.
+ * @param {React.ReactNode} props.children - Contenido dentro del borde.
+ * @param {string} [props.color='#5227FF'] - Color de la línea eléctrica.
+ * @param {number} [props.speed=1] - Velocidad de la animación.
+ * @param {number} [props.chaos=0.12] - Nivel de irregularidad (caos) del rayo.
+ * @param {number} [props.borderRadius=24] - Radio de las esquinas del borde.
+ * @param {string} [props.className] - Clase CSS adicional.
+ * @param {Object} [props.style] - Estilos en línea adicionales.
+ */
 const ElectricBorder = ({
   children,
   color = '#5227FF',

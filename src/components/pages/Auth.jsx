@@ -8,6 +8,10 @@ import '../../styles/components/Auth.css';
 import { FADE_SCALE_IN, SLIDE_IN_LEFT, SLIDE_IN_RIGHT, TEXTTYPE_BASE } from '../../config/animaciones';
 import { TEXTTYPE_TEXTS } from '../../config/uiConfig';
 
+/**
+ * Componente de autenticación.
+ * Maneja el intercambio entre las vistas de Login y Registro.
+ */
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
 

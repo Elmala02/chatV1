@@ -22,7 +22,6 @@ export const SIDEBAR_TABS = [
 export const NAV_LINKS = [
     { to: '/', icon: Home, label: 'Inicio', requiresAuth: false },
     { to: '/chat', icon: MessageSquare, label: 'Chat', requiresAuth: true },
-    { to: '/users', icon: Users, label: 'Usuarios', requiresAuth: true },
 ];
 
 /**

@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import '../../styles/components/Login.css';
 
+/**
+ * Componente de inicio de sesión.
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onToggleAuth - Función para cambiar a la vista de registro.
+ */
 export default function Login({ onToggleAuth }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

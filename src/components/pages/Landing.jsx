@@ -3,9 +3,15 @@ import { Link } from 'react-router-dom';
 import TextType from '../ui/TextType';
 import '../../styles/components/Landing.css';
 import { FADE_UP, FADE_SCALE_HERO, TEXTTYPE_BASE } from '../../config/animaciones';
+import { useApp } from '../../context/AppContext';
 import { TEXTTYPE_TEXTS, FEATURE_CARDS, MOCKUP_BUBBLES } from '../../config/uiConfig';
 
+/**
+ * Componente de la página de inicio (Landing Page).
+ * Presenta las características de la aplicación y permite el acceso.
+ */
 export default function Landing() {
+  const { user } = useApp();
   return (
     <div className="landing-container">
       <section className="hero">
@@ -29,7 +35,7 @@ export default function Landing() {
             Regístrate para unirte a la conversación más vibrante de la web.
           </p>
           <div className="hero-btns">
-            <Link to="/auth" className="btn-primary">Empezar Ahora</Link>
+            <Link to={user ? "/chat" : "/auth"} className="btn-primary">Empezar Ahora</Link>
             <a href="#features" className="btn-secondary">Saber más</a>
           </div>
         </motion.div>

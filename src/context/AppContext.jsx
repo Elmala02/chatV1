@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+/**
+ * Contexto global de la aplicación.
+ * Maneja el estado de autenticación, mensajes, notificaciones y tema.
+ */
 const AppContext = createContext();
 
+/**
+ * Proveedor del contexto de la aplicación.
+ * @param {Object} props - Propiedades del componente.
+ * @param {React.ReactNode} props.children - Componentes hijos.
+ */
 export const AppProvider = ({ children }) => {
     // Theme State
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
@@ -53,10 +62,17 @@ export const AppProvider = ({ children }) => {
         localStorage.setItem('privateMessages', JSON.stringify(privateMessages));
     }, [privateMessages]);
 
+    /**
+     * Alterna entre los temas 'light' y 'dark'.
+     */
     const toggleTheme = () => {
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
     };
 
+    /**
+     * Registra un nuevo usuario en el sistema.
+     * @param {Object} userData - Datos del usuario (nombre, email, password).
+     */
     const registerUser = (userData) => {
         const newUser = {
             ...userData,
@@ -70,6 +86,12 @@ export const AppProvider = ({ children }) => {
         loginUser(userData.email, userData.password);
     };
 
+    /**
+     * Inicia sesión con las credenciales proporcionadas.
+     * @param {string} email - Correo electrónico del usuario.
+     * @param {string} password - Contraseña del usuario.
+     * @returns {boolean} True si el login fue exitoso, False en caso contrario.
+     */
     const loginUser = (email, password) => {
         const foundUser = registeredUsers.find(u => u.email === email && u.password === password);
         if (foundUser) {
@@ -80,11 +102,19 @@ export const AppProvider = ({ children }) => {
         return false;
     };
 
+    /**
+     * Cierra la sesión del usuario actual.
+     */
     const logoutUser = () => {
         setUser(null);
         localStorage.removeItem('currentUser');
     };
 
+    /**
+     * Añade una notificación a un usuario específico.
+     * @param {number|string} targetId - ID del usuario destinatario.
+     * @param {Object} notification - Objeto de notificación (tipo, origen, mensaje).
+     */
     const addNotification = (targetId, notification) => {
         const newNotif = {
             id: Date.now(),
@@ -96,10 +126,17 @@ export const AppProvider = ({ children }) => {
         setNotifications(prev => [newNotif, ...prev]);
     };
 
+    /**
+     * Marca todas las notificaciones del usuario actual como leídas.
+     */
     const markNotificationsRead = () => {
         setNotifications(prev => prev.map(n => n.targetId === user?.id ? { ...n, read: true } : n));
     };
 
+    /**
+     * Envía una solicitud de amistad a otro usuario.
+     * @param {number|string} targetId - ID del usuario destinatario.
+     */
     const sendRequest = (targetId) => {
         if (!user) return;
         const updatedUsers = registeredUsers.map(u => {
@@ -118,6 +155,10 @@ export const AppProvider = ({ children }) => {
         setRegisteredUsers(updatedUsers);
     };
 
+    /**
+     * Acepta una solicitud de amistad de un usuario.
+     * @param {number|string} requestId - ID del usuario que envió la solicitud.
+     */
     const acceptRequest = (requestId) => {
         if (!user) return;
         const updatedUsers = registeredUsers.map(u => {
@@ -144,6 +185,10 @@ export const AppProvider = ({ children }) => {
         setRegisteredUsers(updatedUsers);
     };
 
+    /**
+     * Añade una nueva publicación (post) al muro global.
+     * @param {string} text - Contenido del post.
+     */
     const addPost = (text) => {
         if (!user) return;
         const msg = {
@@ -158,6 +203,10 @@ export const AppProvider = ({ children }) => {
         setMessages(prev => [...prev, msg]);
     };
 
+    /**
+     * Alterna un 'like' en un post específico.
+     * @param {number|string} postId - ID del post.
+     */
     const likePost = (postId) => {
         if (!user) return;
         setMessages(prev => prev.map(msg => {
@@ -181,6 +230,11 @@ export const AppProvider = ({ children }) => {
         }));
     };
 
+    /**
+     * Añade un comentario a un post específico.
+     * @param {number|string} postId - ID del post.
+     * @param {string} commentText - Texto del comentario.
+     */
     const addComment = (postId, commentText) => {
         if (!user) return;
         setMessages(prev => prev.map(msg => {
@@ -206,6 +260,11 @@ export const AppProvider = ({ children }) => {
         }));
     };
 
+    /**
+     * Envía un mensaje privado a otro usuario.
+     * @param {number|string} targetId - ID del destinatario.
+     * @param {string} text - Contenido del mensaje.
+     */
     const sendPrivateMessage = (targetId, text) => {
         if (!user) return;
         const room = [user.id, targetId].sort().join('_');

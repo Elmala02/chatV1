@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
 import '../../styles/components/Register.css';
 
+/**
+ * Componente de registro de usuario.
+ * @param {Object} props - Propiedades del componente.
+ * @param {Function} props.onToggleAuth - Función para cambiar a la vista de login.
+ */
 export default function Register({ onToggleAuth }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');

@@ -4,6 +4,22 @@ import { useEffect, useRef, useState, createElement, useMemo, useCallback } from
 import { gsap } from 'gsap';
 import '../../styles/components/TextType.css';
 
+/**
+ * Componente que simula el efecto de escritura (typing effect).
+ * @param {Object} props - Propiedades del componente.
+ * @param {string|string[]} props.text - Texto o array de textos a escribir.
+ * @param {React.ElementType} [props.as='div'] - Elemento HTML o componente a renderizar como contenedor.
+ * @param {number} [props.typingSpeed=50] - Velocidad de escritura en ms.
+ * @param {number} [props.initialDelay=0] - Retraso antes de empezar a escribir en ms.
+ * @param {number} [props.pauseDuration=2000] - Tiempo de espera al terminar una frase en ms.
+ * @param {number} [props.deletingSpeed=30] - Velocidad de borrado en ms.
+ * @param {boolean} [props.loop=true] - Si debe repetirse el ciclo indefinidamente.
+ * @param {string} [props.className=''] - Clase CSS adicional para el contenedor.
+ * @param {boolean} [props.showCursor=true] - Si se debe mostrar el cursor parpadeante.
+ * @param {string} [props.cursorCharacter='|'] - Carácter a usar como cursor.
+ * @param {string[]} [props.textColors=[]] - Array de colores para cada frase.
+ * @param {boolean} [props.startOnVisible=false] - Si debe empezar solo cuando sea visible en el viewport.
+ */
 const TextType = ({
     text,
     as: Component = 'div',

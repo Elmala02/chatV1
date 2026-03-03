@@ -4,6 +4,13 @@ import { Send, ArrowLeft, Shield, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import '../../styles/components/PrivateChat.css';
 
+/**
+ * Componente de chat privado entre dos usuarios.
+ * Muestra el historial de mensajes y permite enviar nuevos mensajes privados.
+ * @param {Object} props - Propiedades del componente.
+ * @param {Object} props.friend - El objeto del usuario con el que se chatea.
+ * @param {Function} props.onBack - Función para regresar al listado de chats.
+ */
 export default function PrivateChat({ friend, onBack }) {
     const { user, privateMessages, sendPrivateMessage } = useApp();
     const [text, setText] = useState('');

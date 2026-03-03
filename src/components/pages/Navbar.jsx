@@ -6,6 +6,10 @@ import loguito from '../../images/loguito.png';
 import '../../styles/components/Navbar.css';
 import { NAV_LINKS } from '../../config/uiConfig';
 
+/**
+ * Componente de la barra de navegación superior.
+ * Incluye el logo, links globales, notificaciones, cambio de tema y logout.
+ */
 export default function Navbar() {
   const {
     theme, toggleTheme, user, logoutUser,

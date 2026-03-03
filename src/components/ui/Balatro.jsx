@@ -104,6 +104,22 @@ void main() {
 }
 `;
 
+/**
+ * Componente que renderiza un fondo animado tipo "Balatro" usando WebGL (OGL).
+ * @param {Object} props - Propiedades del componente.
+ * @param {number} [props.spinRotation=-2.0] - Velocidad de rotación del efecto.
+ * @param {number} [props.spinSpeed=7.0] - Velocidad general de la animación.
+ * @param {number[]} [props.offset=[0.0, 0.0]] - Desplazamiento del centro del efecto.
+ * @param {string} [props.color1='#DE443B'] - Color principal 1 (Hex).
+ * @param {string} [props.color2='#006BB4'] - Color principal 2 (Hex).
+ * @param {string} [props.color3='#162325'] - Color de acento (Hex).
+ * @param {number} [props.contrast=3.5] - Contraste del efecto de color.
+ * @param {number} [props.lighting=0.4] - Intensidad de la iluminación.
+ * @param {number} [props.spinAmount=0.25] - Cantidad de distorsión espiral.
+ * @param {number} [props.pixelFilter=745.0] - Factor de pixelación.
+ * @param {boolean} [props.isRotate=false] - Si el efecto debe rotar automáticamente.
+ * @param {boolean} [props.mouseInteraction=true] - Si responde al movimiento del mouse.
+ */
 export default function Balatro({
   spinRotation = -2.0,
   spinSpeed = 7.0,
