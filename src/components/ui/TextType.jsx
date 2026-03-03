@@ -62,6 +62,8 @@ const TextType = ({
         return textColors[currentTextIndex % textColors.length];
     };
 
+    // --- Efecto: Observador de Intersección ---
+    // Inicia la animación solo cuando el componente entra en el campo de visión del usuario.
     useEffect(() => {
         if (!startOnVisible || !containerRef.current) return;
 
@@ -73,13 +75,15 @@ const TextType = ({
                     }
                 });
             },
-            { threshold: 0.1 }
+            { threshold: 0.1 } // Se activa cuando el 10% del componente es visible
         );
 
         observer.observe(containerRef.current);
         return () => observer.disconnect();
     }, [startOnVisible]);
 
+    // --- Efecto: Animación del Cursor ---
+    // Utiliza GSAP para crear un efecto de parpadeo suave en el cursor.
     useEffect(() => {
         if (showCursor && cursorRef.current) {
             gsap.set(cursorRef.current, { opacity: 1 });
@@ -87,7 +91,7 @@ const TextType = ({
                 opacity: 0,
                 duration: cursorBlinkDuration,
                 repeat: -1,
-                yoyo: true,
+                yoyo: true, // Efecto rebote (opacidad 1 -> 0 -> 1)
                 ease: 'power2.inOut'
             });
         }
@@ -102,9 +106,14 @@ const TextType = ({
 
         const processedText = reverseMode ? currentText.split('').reverse().join('') : currentText;
 
+        /**
+         * Lógica recursiva que maneja tanto la escritura como el borrado de caracteres.
+         */
         const executeTypingAnimation = () => {
             if (isDeleting) {
+                // --- MODO BORRADO ---
                 if (displayedText === '') {
+                    // Si ya se borró todo, pasamos a la siguiente frase (o terminamos)
                     setIsDeleting(false);
                     if (currentTextIndex === textArray.length - 1 && !loop) {
                         return;
@@ -118,12 +127,15 @@ const TextType = ({
                     setCurrentCharIndex(0);
                     timeout = setTimeout(() => { }, pauseDuration);
                 } else {
+                    // Borrar el último carácter
                     timeout = setTimeout(() => {
                         setDisplayedText(prev => prev.slice(0, -1));
                     }, deletingSpeed);
                 }
             } else {
+                // --- MODO ESCRITURA ---
                 if (currentCharIndex < processedText.length) {
+                    // Escribir el siguiente carácter
                     timeout = setTimeout(
                         () => {
                             setDisplayedText(prev => prev + processedText[currentCharIndex]);
@@ -132,6 +144,7 @@ const TextType = ({
                         variableSpeed ? getRandomSpeed() : typingSpeed
                     );
                 } else if (textArray.length >= 1) {
+                    // Frase completada, esperar antes de empezar a borrar
                     if (!loop && currentTextIndex === textArray.length - 1) return;
                     timeout = setTimeout(() => {
                         setIsDeleting(true);

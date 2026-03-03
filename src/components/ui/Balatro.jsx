@@ -3,12 +3,14 @@ import { useEffect, useRef } from 'react';
 
 import '../../styles/components/Balatro.css';
 
+/**
+ * Convierte un color hexadecimal a un vector vec4 consumible por WebGL.
+ * @param {string} hex - Color en formato #RRGGBB o #RRGGBBAA.
+ * @returns {number[]} Array de 4 valores (RGBA) normalizados entre 0 y 1.
+ */
 function hexToVec4(hex) {
   let hexStr = hex.replace('#', '');
-  let r = 0,
-    g = 0,
-    b = 0,
-    a = 1;
+  let r = 0, g = 0, b = 0, a = 1;
   if (hexStr.length === 6) {
     r = parseInt(hexStr.slice(0, 2), 16) / 255;
     g = parseInt(hexStr.slice(2, 4), 16) / 255;
@@ -22,6 +24,9 @@ function hexToVec4(hex) {
   return [r, g, b, a];
 }
 
+// --- GLSL Shaders ---
+
+/** Vertex Shader: Define la posición de los vértices y pasa las UVs al fragment shader */
 const vertexShader = `
 attribute vec2 uv;
 attribute vec2 position;
@@ -32,11 +37,16 @@ void main() {
 }
 `;
 
+/** 
+ * Fragment Shader: El motor del efecto visual. 
+ * Genera patrones de plasma/ondas basados en tiempo y posición.
+ */
 const fragmentShader = `
 precision highp float;
 
 #define PI 3.14159265359
 
+// Uniforms enviados desde JavaScript
 uniform float iTime;
 uniform vec3 iResolution;
 uniform float uSpinRotation;
@@ -55,20 +65,25 @@ uniform vec2 uMouse;
 
 varying vec2 vUv;
 
+/** Cálculo del efecto de plasma principal */
 vec4 effect(vec2 screenSize, vec2 screen_coords) {
+    // Escalamiento según el filtro de pixelación
     float pixel_size = length(screenSize.xy) / uPixelFilter;
     vec2 uv = (floor(screen_coords.xy * (1.0 / pixel_size)) * pixel_size - 0.5 * screenSize.xy) / length(screenSize.xy) - uOffset;
     float uv_len = length(uv);
     
+    // Configuración de la velocidad y rotación
     float speed = (uSpinRotation * uSpinEase * 0.2);
     if(uIsRotate){
        speed = iTime * speed;
     }
     speed += 302.2;
     
+    // Influencia del mouse sobre el patrón
     float mouseInfluence = (uMouse.x * 2.0 - 1.0);
     speed += mouseInfluence * 0.1;
     
+    // Distorsión trigonométrica (Efecto espiral)
     float new_pixel_angle = atan(uv.y, uv.x) + speed - uSpinEase * 20.0 * (uSpinAmount * uv_len + (1.0 - uSpinAmount));
     vec2 mid = (screenSize.xy / length(screenSize.xy)) / 2.0;
     uv = (vec2(uv_len * cos(new_pixel_angle) + mid.x, uv_len * sin(new_pixel_angle) + mid.y) - mid);
@@ -79,6 +94,7 @@ vec4 effect(vec2 screenSize, vec2 screen_coords) {
     
     vec2 uv2 = vec2(uv.x + uv.y);
     
+    // Iteraciones para crear profundidad en el patrón (Domain Warping)
     for(int i = 0; i < 5; i++) {
         uv2 += sin(max(uv.x, uv.y)) + uv;
         uv += 0.5 * vec2(
@@ -88,11 +104,14 @@ vec4 effect(vec2 screenSize, vec2 screen_coords) {
         uv -= cos(uv.x + uv.y) - sin(uv.x * 0.711 - uv.y);
     }
     
+    // Mezcla de colores según la longitud de los vectores resultantes
     float contrast_mod = (0.25 * uContrast + 0.5 * uSpinAmount + 1.2);
     float paint_res = min(2.0, max(0.0, length(uv) * 0.035 * contrast_mod));
     float c1p = max(0.0, 1.0 - contrast_mod * abs(1.0 - paint_res));
     float c2p = max(0.0, 1.0 - contrast_mod * abs(paint_res));
     float c3p = 1.0 - min(1.0, c1p + c2p);
+    
+    // Aplicación de iluminación dinámica
     float light = (uLighting - 0.2) * max(c1p * 5.0 - 4.0, 0.0) + uLighting * max(c2p * 5.0 - 4.0, 0.0);
     
     return (0.3 / uContrast) * uColor1 + (1.0 - 0.3 / uContrast) * (uColor1 * c1p + uColor2 * c2p + vec4(c3p * uColor3.rgb, c3p * uColor1.a)) + light;

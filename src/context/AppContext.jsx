@@ -12,33 +12,37 @@ const AppContext = createContext();
  * @param {React.ReactNode} props.children - Componentes hijos.
  */
 export const AppProvider = ({ children }) => {
-    // Theme State
+    // Estado del Tema: Almacena 'light' o 'dark'. Se inicializa desde localStorage o por defecto 'dark'.
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
-    // Auth State
+    // Estado de Autenticación: Almacena el objeto del usuario actual logueado.
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('currentUser')) || null);
+
+    // Lista de Usuarios Registrados: Mímica de una base de datos local de usuarios.
     const [registeredUsers, setRegisteredUsers] = useState(
         JSON.parse(localStorage.getItem('users')) || []
     );
 
-    // Global Messages (for Blog/Chat)
+    // Mensajes Globales: Almacena las publicaciones del blog y del chat global.
     const [messages, setMessages] = useState(JSON.parse(localStorage.getItem('messages')) || []);
 
-    // Notifications
+    // Notificaciones: Almacena eventos como likes, comentarios y solicitudes de amistad.
     const [notifications, setNotifications] = useState(
         JSON.parse(localStorage.getItem('notifications')) || []
     );
 
-    // Private Messages State: { 'userId1_userId2': [msg1, msg2...] }
+    // Estado de Mensajes Privados: Objeto donde las llaves son salas (IDs combinados) y los valores son arrays de mensajes.
     const [privateMessages, setPrivateMessages] = useState(
         JSON.parse(localStorage.getItem('privateMessages')) || {}
     );
 
+    // Efecto para aplicar el tema al documento y guardarlo en localStorage.
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
 
+    // Efecto para persistir usuarios registrados y actualizar los datos del usuario actual si cambian.
     useEffect(() => {
         localStorage.setItem('users', JSON.stringify(registeredUsers));
         if (user) {
@@ -50,14 +54,17 @@ export const AppProvider = ({ children }) => {
         }
     }, [registeredUsers]);
 
+    // Efecto para persistir mensajes globales.
     useEffect(() => {
         localStorage.setItem('messages', JSON.stringify(messages));
     }, [messages]);
 
+    // Efecto para persistir notificaciones.
     useEffect(() => {
         localStorage.setItem('notifications', JSON.stringify(notifications));
     }, [notifications]);
 
+    // Efecto para persistir mensajes privados.
     useEffect(() => {
         localStorage.setItem('privateMessages', JSON.stringify(privateMessages));
     }, [privateMessages]);

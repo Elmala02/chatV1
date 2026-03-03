@@ -22,13 +22,29 @@ export default function ChatBoard({ initialTab = 'chat' }) {
     user, registeredUsers, messages, addPost, likePost, addComment,
     sendRequest, acceptRequest, privateMessages, theme
   } = useApp();
+  // --- Estados locales para manejar la UI dinámica ---
+
+  // Mensaje en proceso de escritura (para Posts o Chat Global)
   const [newMessage, setNewMessage] = useState('');
+
+  // Pestaña activa en el sidebar
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Término de búsqueda para filtrar la lista de usuarios
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Amigo con el que se está chateando de forma privada (si es null, se muestra el listado)
   const [selectedFriend, setSelectedFriend] = useState(null);
+
+  // Diccionario de booleanos para manejar qué secciones de comentarios están abiertas { postId: true/false }
   const [activeComments, setActiveComments] = useState({});
+
+  // Diccionario para los inputs de comentarios de cada post { postId: 'texto' }
   const [commentText, setCommentText] = useState({});
 
+  /**
+   * Maneja el envío de una nueva publicación global.
+   */
   const handleSendPost = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -36,6 +52,11 @@ export default function ChatBoard({ initialTab = 'chat' }) {
     setNewMessage('');
   };
 
+  /**
+   * Maneja el envío de un comentario a un post específico.
+   * @param {Event} e - Evento de formulario.
+   * @param {number|string} postId - ID del post al que se comenta.
+   */
   const handleSendComment = (e, postId) => {
     e.preventDefault();
     const text = commentText[postId];
@@ -44,18 +65,31 @@ export default function ChatBoard({ initialTab = 'chat' }) {
     setCommentText({ ...commentText, [postId]: '' });
   };
 
+  /**
+   * Alterna la visibilidad de la sección de comentarios de un post.
+   */
   const toggleComments = (postId) =>
     setActiveComments({ ...activeComments, [postId]: !activeComments[postId] });
 
+  /**
+   * Cambia la pestaña activa y opcionalmente limpia el amigo seleccionado.
+   */
   const handleTabChange = (tab, clearFriend) => {
     setActiveTab(tab);
     if (clearFriend) setSelectedFriend(null);
   };
 
+  // --- Lógica de filtrado y búsqueda ---
+
+  // Filtra usuarios registrados excluyendo al usuario actual y aplicando el término de búsqueda.
   const filteredUsers = registeredUsers.filter(u =>
     u.id !== user.id && u.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Lista de usuarios que son amigos del usuario actual.
   const myFriends = registeredUsers.filter(u => user.friends?.includes(u.id));
+
+  // Lista de usuarios que han enviado una solicitud de amistad al usuario actual.
   const receivedRequests = registeredUsers.filter(u =>
     user.requests?.includes(u.id) && !user.friends?.includes(u.id)
   );

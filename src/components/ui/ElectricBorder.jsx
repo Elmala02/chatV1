@@ -27,11 +27,14 @@ const ElectricBorder = ({
   const timeRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
 
-  // Noise functions
+  // --- Funciones de Ruido Procedural (Perlin-like) ---
+
+  /** Generador de números pseudo-aleatorios basado en seno */
   const random = useCallback(x => {
     return (Math.sin(x * 12.9898) * 43758.5453) % 1;
   }, []);
 
+  /** Ruido 2D suave con interpolación bilineal */
   const noise2D = useCallback(
     (x, y) => {
       const i = Math.floor(x);
@@ -44,7 +47,7 @@ const ElectricBorder = ({
       const c = random(i + (j + 1) * 57);
       const d = random(i + 1 + (j + 1) * 57);
 
-      const ux = fx * fx * (3.0 - 2.0 * fx);
+      const ux = fx * fx * (3.0 - 2.0 * fx); // Suavizado Hermite
       const uy = fy * fy * (3.0 - 2.0 * fy);
 
       return a * (1 - ux) * (1 - uy) + b * ux * (1 - uy) + c * (1 - ux) * uy + d * ux * uy;
@@ -52,6 +55,7 @@ const ElectricBorder = ({
     [random]
   );
 
+  /** Ruido Fractal (FBM): Combina múltiples octavas de ruido para mayor detalle */
   const octavedNoise = useCallback(
     (x, octaves, lacunarity, gain, baseAmplitude, baseFrequency, time, seed, baseFlatness) => {
       let y = 0;
@@ -73,6 +77,7 @@ const ElectricBorder = ({
     [noise2D]
   );
 
+  /** Calcula un punto en los arcos de las esquinas redondeadas */
   const getCornerPoint = useCallback((centerX, centerY, radius, startAngle, arcLength, progress) => {
     const angle = startAngle + progress * arcLength;
     return {
@@ -81,6 +86,7 @@ const ElectricBorder = ({
     };
   }, []);
 
+  /** Calcula la posición (X, Y) en cualquier punto del perímetro de un rectángulo redondeado */
   const getRoundedRectPoint = useCallback(
     (t, left, top, width, height, radius) => {
       const straightWidth = width - 2 * radius;
@@ -91,56 +97,56 @@ const ElectricBorder = ({
 
       let accumulated = 0;
 
-      // Top edge
+      // Borde Superior
       if (distance <= accumulated + straightWidth) {
         const progress = (distance - accumulated) / straightWidth;
         return { x: left + radius + progress * straightWidth, y: top };
       }
       accumulated += straightWidth;
 
-      // Top-right corner
+      // Esquina Superior Derecha
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
         return getCornerPoint(left + width - radius, top + radius, radius, -Math.PI / 2, Math.PI / 2, progress);
       }
       accumulated += cornerArc;
 
-      // Right edge
+      // Borde Derecho
       if (distance <= accumulated + straightHeight) {
         const progress = (distance - accumulated) / straightHeight;
         return { x: left + width, y: top + radius + progress * straightHeight };
       }
       accumulated += straightHeight;
 
-      // Bottom-right corner
+      // Esquina Inferior Derecha
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
         return getCornerPoint(left + width - radius, top + height - radius, radius, 0, Math.PI / 2, progress);
       }
       accumulated += cornerArc;
 
-      // Bottom edge
+      // Borde Inferior
       if (distance <= accumulated + straightWidth) {
         const progress = (distance - accumulated) / straightWidth;
         return { x: left + width - radius - progress * straightWidth, y: top + height };
       }
       accumulated += straightWidth;
 
-      // Bottom-left corner
+      // Esquina Inferior Izquierda
       if (distance <= accumulated + cornerArc) {
         const progress = (distance - accumulated) / cornerArc;
         return getCornerPoint(left + radius, top + height - radius, radius, Math.PI / 2, Math.PI / 2, progress);
       }
       accumulated += cornerArc;
 
-      // Left edge
+      // Borde Izquierdo
       if (distance <= accumulated + straightHeight) {
         const progress = (distance - accumulated) / straightHeight;
         return { x: left, y: top + height - radius - progress * straightHeight };
       }
       accumulated += straightHeight;
 
-      // Top-left corner
+      // Esquina Superior Izquierda
       const progress = (distance - accumulated) / cornerArc;
       return getCornerPoint(left + radius, top + radius, radius, Math.PI, Math.PI / 2, progress);
     },
