@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useChat, useFriends, useChatBoard } from '../../hooks';
 import { Send, UserPlus, Heart, Check, X, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import loguito from '../../images/loguito.png';
@@ -14,85 +14,34 @@ import { SIDEBAR_TABS } from '../../config/uiConfig';
 /**
  * Componente principal del tablero de chat.
  * Maneja el chat global, el blog social, la lista de amigos y las solicitudes.
+ * Toda la lógica está delegada a hooks especializados:
+ * - useChat: mensajes, posts, likes, comentarios
+ * - useFriends: búsqueda, amigos, solicitudes
+ * - useChatBoard: tabs, selección de amigo
+ *
  * @param {Object} props - Propiedades del componente.
- * @param {string} props.initialTab - La pestaña activa inicialmente ('chat', 'blog', 'private', 'users', 'requests').
+ * @param {string} props.initialTab - La pestaña activa inicialmente.
  */
 export default function ChatBoard({ initialTab = 'chat' }) {
+  const { user, theme } = useApp();
+
+  // ── Hooks de lógica ──
   const {
-    user, registeredUsers, messages, addPost, likePost, addComment,
-    sendRequest, acceptRequest, privateMessages, theme
-  } = useApp();
-  // --- Estados locales para manejar la UI dinámica ---
+    messages, reversedMessages, newMessage, activeComments, commentText,
+    setNewMessage, handleSendPost, handleSendComment,
+    toggleComments, updateCommentText, likePost, isLikedByUser,
+  } = useChat();
 
-  // Mensaje en proceso de escritura (para Posts o Chat Global)
-  const [newMessage, setNewMessage] = useState('');
+  const {
+    searchTerm, filteredUsers, myFriends, receivedRequests,
+    isFriend, hasSentRequest, updateSearch,
+    handleSendRequest, handleAcceptRequest,
+  } = useFriends();
 
-  // Pestaña activa en el sidebar
-  const [activeTab, setActiveTab] = useState(initialTab);
-
-  // Término de búsqueda para filtrar la lista de usuarios
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Amigo con el que se está chateando de forma privada (si es null, se muestra el listado)
-  const [selectedFriend, setSelectedFriend] = useState(null);
-
-  // Diccionario de booleanos para manejar qué secciones de comentarios están abiertas { postId: true/false }
-  const [activeComments, setActiveComments] = useState({});
-
-  // Diccionario para los inputs de comentarios de cada post { postId: 'texto' }
-  const [commentText, setCommentText] = useState({});
-
-  /**
-   * Maneja el envío de una nueva publicación global.
-   */
-  const handleSendPost = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-    addPost(newMessage);
-    setNewMessage('');
-  };
-
-  /**
-   * Maneja el envío de un comentario a un post específico.
-   * @param {Event} e - Evento de formulario.
-   * @param {number|string} postId - ID del post al que se comenta.
-   */
-  const handleSendComment = (e, postId) => {
-    e.preventDefault();
-    const text = commentText[postId];
-    if (!text?.trim()) return;
-    addComment(postId, text);
-    setCommentText({ ...commentText, [postId]: '' });
-  };
-
-  /**
-   * Alterna la visibilidad de la sección de comentarios de un post.
-   */
-  const toggleComments = (postId) =>
-    setActiveComments({ ...activeComments, [postId]: !activeComments[postId] });
-
-  /**
-   * Cambia la pestaña activa y opcionalmente limpia el amigo seleccionado.
-   */
-  const handleTabChange = (tab, clearFriend) => {
-    setActiveTab(tab);
-    if (clearFriend) setSelectedFriend(null);
-  };
-
-  // --- Lógica de filtrado y búsqueda ---
-
-  // Filtra usuarios registrados excluyendo al usuario actual y aplicando el término de búsqueda.
-  const filteredUsers = registeredUsers.filter(u =>
-    u.id !== user.id && u.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Lista de usuarios que son amigos del usuario actual.
-  const myFriends = registeredUsers.filter(u => user.friends?.includes(u.id));
-
-  // Lista de usuarios que han enviado una solicitud de amistad al usuario actual.
-  const receivedRequests = registeredUsers.filter(u =>
-    user.requests?.includes(u.id) && !user.friends?.includes(u.id)
-  );
+  const {
+    activeTab, selectedFriend,
+    handleTabChange, selectFriend, clearSelectedFriend,
+  } = useChatBoard(initialTab);
 
   return (
     <div className="board-container">
@@ -135,7 +84,7 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                 <PrivateChat
                   key="private-chat"
                   friend={selectedFriend}
-                  onBack={() => setSelectedFriend(null)}
+                  onBack={clearSelectedFriend}
                 />
 
               ) : activeTab === 'chat' ? (
@@ -174,8 +123,8 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                     <button onClick={handleSendPost} className="post-btn">Publicar</button>
                   </div>
                   <div className="blog-posts">
-                    {messages.slice().reverse().map(post => {
-                      const isLiked = post.likes?.some(id => String(id) === String(user.id));
+                    {reversedMessages.map(post => {
+                      const isLiked = isLikedByUser(post);
                       return (
                         <div key={post.id} className="post-card glass">
                           <div className="post-header">
@@ -225,7 +174,7 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                                     type="text"
                                     placeholder="Escribe un comentario..."
                                     value={commentText[post.id] || ''}
-                                    onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
+                                    onChange={(e) => updateCommentText(post.id, e.target.value)}
                                   />
                                   <button type="submit"><Send size={16} /></button>
                                 </form>
@@ -246,7 +195,7 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                       <div
                         key={f.id}
                         className="user-card-mini glass clickable"
-                        onClick={() => setSelectedFriend(f)}
+                        onClick={() => selectFriend(f)}
                       >
                         <div className="u-avatar">{f.avatar || f.name[0]}</div>
                         <div className="u-info">
@@ -268,7 +217,7 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                       type="text"
                       placeholder="Buscar usuarios..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => updateSearch(e.target.value)}
                     />
                   </div>
                   <div className="users-list">
@@ -277,17 +226,17 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                         <div className="u-avatar">{u.avatar || u.name[0]}</div>
                         <div className="u-info">
                           <h4>{u.name}</h4>
-                          <p>{user.friends?.includes(u.id) ? 'Amigos ✨' : u.email}</p>
+                          <p>{isFriend(u.id) ? 'Amigos ✨' : u.email}</p>
                         </div>
-                        {user.friends?.includes(u.id) ? (
+                        {isFriend(u.id) ? (
                           <div className="friends-badge"><Check size={16} /></div>
                         ) : (
                           <button
-                            className={`add-btn ${u.requests?.includes(user.id) ? 'sent' : ''}`}
-                            onClick={() => sendRequest(u.id)}
-                            disabled={u.requests?.includes(user.id)}
+                            className={`add-btn ${hasSentRequest(u) ? 'sent' : ''}`}
+                            onClick={() => handleSendRequest(u.id)}
+                            disabled={hasSentRequest(u)}
                           >
-                            {u.requests?.includes(user.id) ? <Check size={18} /> : <UserPlus size={18} />}
+                            {hasSentRequest(u) ? <Check size={18} /> : <UserPlus size={18} />}
                           </button>
                         )}
                       </div>
@@ -309,7 +258,7 @@ export default function ChatBoard({ initialTab = 'chat' }) {
                           <p>Quiere ser tu amigo</p>
                         </div>
                         <div className="request-actions">
-                          <button className="accept-btn" onClick={() => acceptRequest(u.id)}>
+                          <button className="accept-btn" onClick={() => handleAcceptRequest(u.id)}>
                             <Check size={18} /> Aceptar
                           </button>
                           <button className="decline-btn"><X size={18} /></button>

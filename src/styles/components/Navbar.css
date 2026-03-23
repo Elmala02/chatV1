@@ -13,7 +13,7 @@
 }
 
 .nav-container.scrolled {
-    height: 70px;
+    height: 110px;
     background: var(--nav-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);

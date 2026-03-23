@@ -1,61 +1,38 @@
-import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth, useNavbar, useNotifications } from '../../hooks';
 import { Sun, Moon, LogOut, Bell, Heart, UserPlus } from 'lucide-react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import loguito from '../../images/loguito.png';
 import '../../styles/components/Navbar.css';
 import { NAV_LINKS } from '../../config/uiConfig';
 
 /**
+ * Mapa de íconos de notificación por tipo.
+ * @param {string} type - Tipo de notificación.
+ * @returns {JSX.Element} Ícono correspondiente.
+ */
+const getNotifIcon = (type) => {
+  switch (type) {
+    case 'like': return <Heart size={16} className="notif-icon like" />;
+    case 'friend_request': return <UserPlus size={16} className="notif-icon req" />;
+    default: return <Bell size={16} className="notif-icon" />;
+  }
+};
+
+/**
  * Componente de la barra de navegación superior.
  * Incluye el logo, links globales, notificaciones, cambio de tema y logout.
+ * Toda la lógica está delegada a hooks especializados.
  */
 export default function Navbar() {
+  const { theme, toggleTheme, user } = useApp();
+  const { handleLogout } = useAuth();
+  const { scrolled } = useNavbar();
   const {
-    theme, toggleTheme, user, logoutUser,
-    notifications, markNotificationsRead
-  } = useApp();
-  const [scrolled, setScrolled] = useState(false);
-  const [showNotif, setShowNotif] = useState(false);
-  const navigate = useNavigate();
+    showNotif, myNotifications, unreadCount,
+    notifRef, handleToggleNotif,
+  } = useNotifications();
   const location = useLocation();
-  const notifRef = useRef(null);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    const handleClickOutside = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setShowNotif(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const myNotifications = notifications.filter(n => n.targetId === user?.id);
-  const unreadCount = myNotifications.filter(n => !n.read).length;
-
-  const handleToggleNotif = () => {
-    if (!showNotif && unreadCount > 0) markNotificationsRead();
-    setShowNotif(!showNotif);
-  };
-
-  const handleLogout = () => {
-    logoutUser();
-    navigate('/');
-  };
-
-  const getNotifIcon = (type) => {
-    switch (type) {
-      case 'like': return <Heart size={16} className="notif-icon like" />;
-      case 'friend_request': return <UserPlus size={16} className="notif-icon req" />;
-      default: return <Bell size={16} className="notif-icon" />;
-    }
-  };
 
   return (
     <nav className={`nav-container ${scrolled ? 'scrolled' : ''}`}>

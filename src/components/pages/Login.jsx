@@ -1,42 +1,26 @@
-import { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks';
 import { Mail, Lock } from 'lucide-react';
 import '../../styles/components/Login.css';
 
 /**
  * Componente de inicio de sesión.
+ * Toda la lógica está delegada al hook useAuth.
  * @param {Object} props - Propiedades del componente.
  * @param {Function} props.onToggleAuth - Función para cambiar a la vista de registro.
  */
 export default function Login({ onToggleAuth }) {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const { loginUser } = useApp();
-    const navigate = useNavigate();
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setError('');
-        const success = loginUser(email, password);
-        if (success) {
-            navigate('/chat');
-        } else {
-            setError('Credenciales incorrectas');
-        }
-    };
+    const { formData, error, isLoading, updateField, handleLogin } = useAuth();
 
     return (
         <div className="login-wrapper">
-            <form className="login-form" onSubmit={handleSubmit}>
+            <form className="login-form" onSubmit={handleLogin}>
                 <div className="input-group">
                     <Mail size={20} />
                     <input
                         type="email"
                         placeholder="Correo electrónico"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        onChange={(e) => updateField('email', e.target.value)}
                         required
                     />
                 </div>
@@ -45,16 +29,16 @@ export default function Login({ onToggleAuth }) {
                     <input
                         type="password"
                         placeholder="Contraseña"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        onChange={(e) => updateField('password', e.target.value)}
                         required
                     />
                 </div>
 
                 {error && <p className="error-msg">{error}</p>}
 
-                <button type="submit" className="login-submit-btn">
-                    Iniciar Sesión
+                <button type="submit" className="login-submit-btn" disabled={isLoading}>
+                    {isLoading ? 'Cargando...' : 'Iniciar Sesión'}
                 </button>
             </form>
 

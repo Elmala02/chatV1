@@ -11,10 +11,8 @@ import Auth from './components/pages/Auth'
 import ChatBoard from './components/pages/ChatBoard'
 
 /**
- * Componente que protege las rutas de la aplicación.
- * Redirige a /auth si el usuario no ha iniciado sesión.
- * @param {Object} props - Propiedades del componente.
- * @param {React.ReactNode} props.children - Componentes protegidos.
+ * Componente que protege las rutas de la aplicación
+ * Redirige a /auth si el usuario no ha iniciado sesión
  */
 const ProtectedRoute = ({ children }) => {
   const { user } = useApp();

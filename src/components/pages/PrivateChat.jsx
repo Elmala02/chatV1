@@ -1,36 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { usePrivateChat } from '../../hooks';
 import { Send, ArrowLeft, Shield, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import '../../styles/components/PrivateChat.css';
 
 /**
  * Componente de chat privado entre dos usuarios.
- * Muestra el historial de mensajes y permite enviar nuevos mensajes privados.
+ * Toda la lógica está delegada al hook usePrivateChat.
  * @param {Object} props - Propiedades del componente.
  * @param {Object} props.friend - El objeto del usuario con el que se chatea.
  * @param {Function} props.onBack - Función para regresar al listado de chats.
  */
 export default function PrivateChat({ friend, onBack }) {
-    const { user, privateMessages, sendPrivateMessage } = useApp();
-    const [text, setText] = useState('');
-    const scrollRef = useRef(null);
-
-    const room = [user.id, friend.id].sort().join('_');
-    const messages = privateMessages[room] || [];
-
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages]);
-
-    const handleSend = (e) => {
-        e.preventDefault();
-        if (!text.trim()) return;
-        sendPrivateMessage(friend.id, text);
-        setText('');
-    };
+    const { user } = useApp();
+    const { text, messages, scrollRef, setText, handleSend } = usePrivateChat(friend);
 
     return (
         <motion.div

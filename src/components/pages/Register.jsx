@@ -1,43 +1,26 @@
-import { useState } from 'react';
-import { useApp } from '../../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks';
 import { User, Mail, Lock } from 'lucide-react';
 import '../../styles/components/Register.css';
 
 /**
  * Componente de registro de usuario.
+ * Toda la lógica está delegada al hook useAuth.
  * @param {Object} props - Propiedades del componente.
  * @param {Function} props.onToggleAuth - Función para cambiar a la vista de login.
  */
 export default function Register({ onToggleAuth }) {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const { registerUser } = useApp();
-    const navigate = useNavigate();
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setError('');
-        if (!name || !email || !password) {
-            setError('Todos los campos son obligatorios');
-            return;
-        }
-        registerUser({ name, email, password });
-        navigate('/chat');
-    };
+    const { formData, error, isLoading, updateField, handleRegister } = useAuth();
 
     return (
         <div className="register-wrapper">
-            <form className="register-form" onSubmit={handleSubmit}>
+            <form className="register-form" onSubmit={handleRegister}>
                 <div className="input-group">
                     <User size={20} />
                     <input
                         type="text"
                         placeholder="Nombre completo"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={formData.name}
+                        onChange={(e) => updateField('name', e.target.value)}
                         required
                     />
                 </div>
@@ -46,8 +29,8 @@ export default function Register({ onToggleAuth }) {
                     <input
                         type="email"
                         placeholder="Correo electrónico"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        onChange={(e) => updateField('email', e.target.value)}
                         required
                     />
                 </div>
@@ -56,16 +39,16 @@ export default function Register({ onToggleAuth }) {
                     <input
                         type="password"
                         placeholder="Contraseña"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        onChange={(e) => updateField('password', e.target.value)}
                         required
                     />
                 </div>
 
                 {error && <p className="error-msg">{error}</p>}
 
-                <button type="submit" className="register-submit-btn">
-                    Registrarse
+                <button type="submit" className="register-submit-btn" disabled={isLoading}>
+                    {isLoading ? 'Cargando...' : 'Registrarse'}
                 </button>
             </form>
 
