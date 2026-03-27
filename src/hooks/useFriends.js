@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/useApp';
 
 /**
  * Hook personalizado para la lógica de amigos, solicitudes y búsqueda de usuarios.

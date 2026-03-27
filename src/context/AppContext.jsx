@@ -1,10 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { AppContext } from './appContext';
 
-/**
- * Contexto global de la aplicación.
- * Maneja el estado de autenticación, mensajes, notificaciones y tema.
- */
-const AppContext = createContext();
+const createId = () => crypto.randomUUID();
+const formatTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 /**
  * Proveedor del contexto de la aplicación.
@@ -48,11 +46,10 @@ export const AppProvider = ({ children }) => {
         if (user) {
             const updatedCurrentUser = registeredUsers.find(u => u.id === user.id);
             if (updatedCurrentUser) {
-                setUser(updatedCurrentUser);
                 localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
             }
         }
-    }, [registeredUsers]);
+    }, [registeredUsers, user]);
 
     // Efecto para persistir mensajes globales.
     useEffect(() => {
@@ -83,7 +80,7 @@ export const AppProvider = ({ children }) => {
     const registerUser = (userData) => {
         const newUser = {
             ...userData,
-            id: Date.now(),
+            id: createId(),
             requests: [],
             friends: [],
             avatar: userData.name[0].toUpperCase()
@@ -124,10 +121,10 @@ export const AppProvider = ({ children }) => {
      */
     const addNotification = (targetId, notification) => {
         const newNotif = {
-            id: Date.now(),
+            id: createId(),
             targetId,
             read: false,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: formatTime(),
             ...notification
         };
         setNotifications(prev => [newNotif, ...prev]);
@@ -190,6 +187,10 @@ export const AppProvider = ({ children }) => {
             return u;
         });
         setRegisteredUsers(updatedUsers);
+        const updatedCurrentUser = updatedUsers.find(u => u.id === user.id);
+        if (updatedCurrentUser) {
+            setUser(updatedCurrentUser);
+        }
     };
 
     /**
@@ -199,11 +200,11 @@ export const AppProvider = ({ children }) => {
     const addPost = (text) => {
         if (!user) return;
         const msg = {
-            id: Date.now(),
+            id: createId(),
             sender: user.name,
             senderId: user.id,
             text: text,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: formatTime(),
             likes: [],
             comments: []
         };
@@ -247,11 +248,11 @@ export const AppProvider = ({ children }) => {
         setMessages(prev => prev.map(msg => {
             if (msg.id === postId) {
                 const newComment = {
-                    id: Date.now(),
+                    id: createId(),
                     userId: user.id,
                     userName: user.name,
                     text: commentText,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    time: formatTime()
                 };
 
                 if (msg.senderId !== user.id) {
@@ -276,11 +277,11 @@ export const AppProvider = ({ children }) => {
         if (!user) return;
         const room = [user.id, targetId].sort().join('_');
         const newMessage = {
-            id: Date.now(),
+            id: createId(),
             senderId: user.id,
             senderName: user.name,
             text: text,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            time: formatTime()
         };
 
         setPrivateMessages(prev => ({
@@ -309,5 +310,3 @@ export const AppProvider = ({ children }) => {
         </AppContext.Provider>
     );
 };
-
-export const useApp = () => useContext(AppContext);

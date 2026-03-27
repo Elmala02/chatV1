@@ -1,0 +1,42 @@
+.discover-section {
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.discover-search {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.discover-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  overflow-y: auto;
+}
+
+.discover-add-btn {
+  background: var(--bg-primary);
+  color: var(--primary);
+  padding: 0.6rem;
+  border: 1px solid var(--primary);
+}
+
+.discover-add-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.discover-add-btn.sent {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.discover-friends-badge {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+  padding: 0.5rem;
+  border-radius: 50%;
+}

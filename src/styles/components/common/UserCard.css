@@ -1,0 +1,45 @@
+.user-card {
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.user-card--clickable {
+  cursor: pointer;
+}
+
+.user-card--clickable:hover {
+  background: var(--bg-primary);
+  transform: translateX(5px);
+  border-color: var(--primary);
+}
+
+.user-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card__name {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.user-card__subtitle {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-card__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}

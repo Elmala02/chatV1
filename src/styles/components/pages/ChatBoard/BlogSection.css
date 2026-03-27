@@ -1,0 +1,184 @@
+.blog-section {
+  padding: 2rem;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ── Compositor de posts ── */
+.blog-composer {
+  padding: 1.5rem;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.blog-composer textarea {
+  min-height: 100px;
+  resize: none;
+}
+
+.blog-composer__btn {
+  align-self: flex-end;
+  background: var(--primary);
+  color: white;
+  padding: 0.8rem 1.5rem;
+}
+
+/* ── Lista de posts ── */
+.blog-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Post Card ── */
+.blog-post {
+  padding: 1.5rem;
+  border-radius: 20px;
+  transition: transform 0.2s;
+}
+
+.blog-post:hover {
+  transform: scale(1.005);
+  border-color: var(--primary);
+}
+
+.blog-post__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.blog-post__meta h5 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.blog-post__meta span {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.blog-post__content {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.blog-post__actions {
+  display: flex;
+  gap: 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* ── Action Buttons ── */
+.blog-action-btn {
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.blog-action-btn:hover,
+.blog-action-btn.active {
+  background: var(--bg-secondary);
+  color: var(--primary);
+}
+
+.blog-action-btn--like.active {
+  color: var(--error);
+}
+
+/* ── Comments Section ── */
+.blog-comments-section {
+  border-top: 1px solid var(--glass-border);
+  padding-top: 1.2rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.blog-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* ── Individual Comment ── */
+.blog-comment {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.blog-comment__body {
+  flex: 1;
+  background: var(--bg-secondary);
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+}
+
+.blog-comment__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.blog-comment__user {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.blog-comment__time {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+
+.blog-comment__body p {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ── Comment Input ── */
+.blog-comment-input {
+  display: flex;
+  gap: 0.8rem;
+  background: var(--bg-secondary);
+  padding: 0.4rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+}
+
+.blog-comment-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+}
+
+.blog-comment-input button {
+  background: var(--primary);
+  color: white;
+  padding: 0.4rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

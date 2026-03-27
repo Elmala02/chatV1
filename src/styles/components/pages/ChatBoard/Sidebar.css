@@ -1,0 +1,56 @@
+.board-sidebar {
+  border-right: 1px solid var(--glass-border);
+  padding: 2rem 1.5rem;
+  background: var(--bg-secondary);
+  opacity: 0.9;
+}
+
+.board-sidebar__header {
+  margin-bottom: 1rem;
+}
+
+.board-sidebar__logo {
+  height: 50px;
+  object-fit: contain;
+}
+
+.board-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.board-sidebar__nav button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  text-align: left;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  border-radius: 12px;
+  transition: all 0.2s;
+  width: 100%;
+  position: relative;
+}
+
+.board-sidebar__nav button:hover {
+  background: var(--bg-primary);
+  color: var(--primary);
+}
+
+.board-sidebar__nav button.active {
+  background: var(--primary);
+  color: white;
+}
+
+.board-sidebar__badge {
+  background: var(--secondary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+  font-weight: 800;
+}

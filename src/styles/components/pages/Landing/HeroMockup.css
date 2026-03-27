@@ -1,0 +1,50 @@
+.hero-mockup {
+  width: 100%;
+  border-radius: 20px;
+  height: 350px;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.hero-mockup__header {
+  background: var(--glass-border);
+  padding: 0.8rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hero-mockup__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.hero-mockup__dot--red { background: #ff5f56; }
+.hero-mockup__dot--yellow { background: #ffbd2e; }
+.hero-mockup__dot--green { background: #27c93f; }
+
+.hero-mockup__body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hero-mockup__bubble {
+  padding: 0.8rem 1.2rem;
+  border-radius: 15px;
+  max-width: 80%;
+  font-weight: 500;
+}
+
+.hero-mockup__bubble--left {
+  background: var(--bg-secondary);
+  align-self: flex-start;
+}
+
+.hero-mockup__bubble--right {
+  background: var(--primary);
+  color: white;
+  align-self: flex-end;
+}
