@@ -1,299 +1,266 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AppContext } from './appContext';
+import { io } from 'socket.io-client';
+import api from '../config/api';
 
-const createId = () => crypto.randomUUID();
-const formatTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const SOCKET_URL = 'http://localhost:5000';
+let socket;
 
-/**
- * Proveedor del contexto de la aplicación.
- * @param {Object} props - Propiedades del componente.
- * @param {React.ReactNode} props.children - Componentes hijos.
- */
 export const AppProvider = ({ children }) => {
-    // Estado del Tema: Almacena 'light' o 'dark'. Se inicializa desde localStorage o por defecto 'dark'.
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+    const [user, setUser] = useState(null);
+    const [registeredUsers, setRegisteredUsers] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [privateMessages, setPrivateMessages] = useState({});
+    const [socketConnected, setSocketConnected] = useState(false);
 
-    // Estado de Autenticación: Almacena el objeto del usuario actual logueado.
-    const [user, setUser] = useState(JSON.parse(localStorage.getItem('currentUser')) || null);
-
-    // Lista de Usuarios Registrados: Mímica de una base de datos local de usuarios.
-    const [registeredUsers, setRegisteredUsers] = useState(
-        JSON.parse(localStorage.getItem('users')) || []
-    );
-
-    // Mensajes Globales: Almacena las publicaciones del blog y del chat global.
-    const [messages, setMessages] = useState(JSON.parse(localStorage.getItem('messages')) || []);
-
-    // Notificaciones: Almacena eventos como likes, comentarios y solicitudes de amistad.
-    const [notifications, setNotifications] = useState(
-        JSON.parse(localStorage.getItem('notifications')) || []
-    );
-
-    // Estado de Mensajes Privados: Objeto donde las llaves son salas (IDs combinados) y los valores son arrays de mensajes.
-    const [privateMessages, setPrivateMessages] = useState(
-        JSON.parse(localStorage.getItem('privateMessages')) || {}
-    );
-
-    // Efecto para aplicar el tema al documento y guardarlo en localStorage.
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // Efecto para persistir usuarios registrados y actualizar los datos del usuario actual si cambian.
-    useEffect(() => {
-        localStorage.setItem('users', JSON.stringify(registeredUsers));
-        if (user) {
-            const updatedCurrentUser = registeredUsers.find(u => u.id === user.id);
-            if (updatedCurrentUser) {
-                localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
-            }
-        }
-    }, [registeredUsers, user]);
-
-    // Efecto para persistir mensajes globales.
-    useEffect(() => {
-        localStorage.setItem('messages', JSON.stringify(messages));
-    }, [messages]);
-
-    // Efecto para persistir notificaciones.
-    useEffect(() => {
-        localStorage.setItem('notifications', JSON.stringify(notifications));
-    }, [notifications]);
-
-    // Efecto para persistir mensajes privados.
-    useEffect(() => {
-        localStorage.setItem('privateMessages', JSON.stringify(privateMessages));
-    }, [privateMessages]);
-
-    /**
-     * Alterna entre los temas 'light' y 'dark'.
-     */
     const toggleTheme = () => {
         setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
     };
 
-    /**
-     * Registra un nuevo usuario en el sistema.
-     * @param {Object} userData - Datos del usuario (nombre, email, password).
-     */
-    const registerUser = (userData) => {
-        const newUser = {
-            ...userData,
-            id: createId(),
-            requests: [],
-            friends: [],
-            avatar: userData.name[0].toUpperCase()
-        };
-        const updatedUsers = [...registeredUsers, newUser];
-        setRegisteredUsers(updatedUsers);
-        loginUser(userData.email, userData.password);
-    };
+    // --- AUTENTICACIÓN Y CARGA INICIAL ---
 
-    /**
-     * Inicia sesión con las credenciales proporcionadas.
-     * @param {string} email - Correo electrónico del usuario.
-     * @param {string} password - Contraseña del usuario.
-     * @returns {boolean} True si el login fue exitoso, False en caso contrario.
-     */
-    const loginUser = (email, password) => {
-        const foundUser = registeredUsers.find(u => u.email === email && u.password === password);
-        if (foundUser) {
-            setUser(foundUser);
-            localStorage.setItem('currentUser', JSON.stringify(foundUser));
-            return true;
+    const loadInitialData = async () => {
+        try {
+            const [usersRes, postsRes, notifRes] = await Promise.all([
+                api.get('/users'),
+                api.get('/blog/posts'),
+                api.get('/notifications')
+            ]);
+            setRegisteredUsers(usersRes.data);
+            setMessages(postsRes.data);
+            setNotifications(notifRes.data);
+        } catch (error) {
+            console.error("Error cargando datos", error);
         }
-        return false;
     };
 
-    /**
-     * Cierra la sesión del usuario actual.
-     */
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            api.get('/auth/me').then(res => {
+                setUser(res.data.user);
+                loadInitialData();
+            }).catch(() => {
+                localStorage.removeItem('token');
+            });
+        }
+    }, []);
+
+    // --- SOCKET IO HANDLERS ---
+
+    const setupSocket = useCallback(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        // Se usa STRICTAMENTE polling para evitar el problema interno de Werkzeug 3.0 con WebSockets nativos 
+        // y erradicar el molesto mensaje "Invalid frame header" de la consola.
+        socket = io(SOCKET_URL, {
+            extraHeaders: { Authorization: `Bearer ${token}` },
+            transports: ['polling']  // <-- ESTE ES EL ARREGLO ESTRICTO
+        });
+
+        socket.on('connect', () => {
+            setSocketConnected(true);
+            socket.emit('identify', { token });
+        });
+
+        socket.on('disconnect', () => {
+             setSocketConnected(false);
+        });
+
+        socket.on('new_post', (post) => {
+            setMessages(prev => {
+                // Evitar duplicados si quien lo mandó ya lo agregó optimisticamente
+                if (prev.some(p => p.id === post.id)) return prev;
+                return [post, ...prev];
+            });
+        });
+
+        socket.on('new_comment', (data) => {
+            setMessages(prev => prev.map(msg => {
+                if (msg.id === data.postId) {
+                    const exists = (msg.comments || []).some(c => c.id === data.comment.id);
+                    if (exists) return msg;
+                    return { ...msg, comments: [...(msg.comments || []), data.comment] };
+                }
+                return msg;
+            }));
+        });
+
+        socket.on('notification', (notif) => {
+            const newNotif = {
+                id: crypto.randomUUID(), read: false, ...notif
+            };
+            setNotifications(prev => [newNotif, ...prev]);
+            
+            // Refrescar al usuario si hay temas de amistad
+            if (notif.type === 'friend_request' || notif.type === 'request_accepted') {
+                api.get('/auth/me').then(res => setUser(res.data.user));
+            }
+        });
+
+        socket.on('receive_private_message', (msg) => {
+            setPrivateMessages(prev => {
+                const isMyMessage = msg.senderId === user?.id;
+                const chatKey = isMyMessage ? msg.targetId : msg.senderId; // El arreglo de chat corresponde a esa persona
+                
+                const existingChat = prev[chatKey] || [];
+                if (existingChat.some(m => m.id === msg.id)) return prev; // Evitar duplicar
+                
+                return {
+                    ...prev,
+                    [chatKey]: [...existingChat, msg]
+                };
+            });
+        });
+        
+    }, [user?.id]);
+
+    useEffect(() => {
+        if (user) setupSocket();
+        return () => {
+            if (socket) socket.disconnect();
+        };
+    }, [user, setupSocket]);
+
+    // --- ACCIONES DE AUTENTICACIÓN ---
+
+    const registerUser = async (userData) => {
+        const res = await api.post('/auth/register', userData);
+        localStorage.setItem('token', res.data.token);
+        setUser(res.data.user);
+        await loadInitialData();
+        return true;
+    };
+
+    const loginUser = async (email, password) => {
+        try {
+            const res = await api.post('/auth/login', { email, password });
+            localStorage.setItem('token', res.data.token);
+            setUser(res.data.user);
+            await loadInitialData();
+            return true;
+        } catch (error) {
+            return false;
+        }
+    };
+
     const logoutUser = () => {
         setUser(null);
-        localStorage.removeItem('currentUser');
+        localStorage.removeItem('token');
+        if (socket) socket.disconnect();
     };
 
-    /**
-     * Añade una notificación a un usuario específico.
-     * @param {number|string} targetId - ID del usuario destinatario.
-     * @param {Object} notification - Objeto de notificación (tipo, origen, mensaje).
-     */
-    const addNotification = (targetId, notification) => {
-        const newNotif = {
-            id: createId(),
-            targetId,
-            read: false,
-            time: formatTime(),
-            ...notification
-        };
-        setNotifications(prev => [newNotif, ...prev]);
-    };
+    // --- ACCIONES SOCIALES Y DE CHAT ---
 
-    /**
-     * Marca todas las notificaciones del usuario actual como leídas.
-     */
-    const markNotificationsRead = () => {
-        setNotifications(prev => prev.map(n => n.targetId === user?.id ? { ...n, read: true } : n));
-    };
-
-    /**
-     * Envía una solicitud de amistad a otro usuario.
-     * @param {number|string} targetId - ID del usuario destinatario.
-     */
-    const sendRequest = (targetId) => {
-        if (!user) return;
-        const updatedUsers = registeredUsers.map(u => {
-            if (u.id === targetId) {
-                if (!u.requests.includes(user.id)) {
-                    addNotification(targetId, {
-                        type: 'friend_request',
-                        from: user.name,
-                        message: 'te ha enviado una solicitud de amistad'
-                    });
-                    return { ...u, requests: [...u.requests, user.id] };
-                }
-            }
-            return u;
-        });
-        setRegisteredUsers(updatedUsers);
-    };
-
-    /**
-     * Acepta una solicitud de amistad de un usuario.
-     * @param {number|string} requestId - ID del usuario que envió la solicitud.
-     */
-    const acceptRequest = (requestId) => {
-        if (!user) return;
-        const updatedUsers = registeredUsers.map(u => {
-            if (u.id === user.id) {
-                return {
-                    ...u,
-                    friends: [...u.friends, requestId],
-                    requests: u.requests.filter(id => id !== requestId)
-                };
-            }
-            if (u.id === requestId) {
-                addNotification(requestId, {
-                    type: 'request_accepted',
-                    from: user.name,
-                    message: 'ha aceptado tu solicitud de amistad'
-                });
-                return {
-                    ...u,
-                    friends: [...u.friends, user.id]
-                };
-            }
-            return u;
-        });
-        setRegisteredUsers(updatedUsers);
-        const updatedCurrentUser = updatedUsers.find(u => u.id === user.id);
-        if (updatedCurrentUser) {
-            setUser(updatedCurrentUser);
+    const markNotificationsRead = async () => {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        try {
+            await api.post('/notifications/read');
+        } catch(err) {
+            console.log("No se pudo marcar leido en DB");
         }
     };
 
-    /**
-     * Añade una nueva publicación (post) al muro global.
-     * @param {string} text - Contenido del post.
-     */
-    const addPost = (text) => {
-        if (!user) return;
-        const msg = {
-            id: createId(),
-            sender: user.name,
-            senderId: user.id,
-            text: text,
-            time: formatTime(),
-            likes: [],
-            comments: []
-        };
-        setMessages(prev => [...prev, msg]);
+    const sendRequest = async (targetId) => {
+        try {
+            await api.post('/friends/request', { targetId });
+        } catch (err) {
+            console.log("Solicitud duplicada o inválida, ignorada visualmente.");
+        }
     };
 
-    /**
-     * Alterna un 'like' en un post específico.
-     * @param {number|string} postId - ID del post.
-     */
-    const likePost = (postId) => {
-        if (!user) return;
-        setMessages(prev => prev.map(msg => {
-            if (msg.id === postId) {
-                const currentLikes = msg.likes || [];
-                const isLiked = currentLikes.some(id => String(id) === String(user.id));
-                const updatedLikes = isLiked
-                    ? currentLikes.filter(id => String(id) !== String(user.id))
-                    : [...currentLikes, user.id];
+    const acceptRequest = async (requestId) => {
+        try {
+            await api.post('/friends/accept', { requestId });
+            api.get('/auth/me').then(res => setUser(res.data.user)); // Refresh usuario
+        } catch (err) {
+            console.log("No se pudo aceptar la solicitud.", err);
+        }
+    };
 
-                if (!isLiked && String(msg.senderId) !== String(user.id)) {
-                    addNotification(msg.senderId, {
-                        type: 'like',
-                        from: user.name,
-                        message: 'le dio me gusta a tu post'
-                    });
+    const addPost = async (text) => {
+        try {
+            // Actualización optimista veloz para no sentir lag
+            const tempId = Date.now();
+            const tempPost = {
+                id: tempId, text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                sender: user.name, senderId: user.id, likes: [], comments: []
+            };
+            setMessages(prev => [tempPost, ...prev]);
+
+            await api.post('/blog/post', { text });
+            // El socket enviará el real y sobreescribiremos o lo dejaremos así
+        } catch (err) {
+            console.log("Error al publicar post", err);
+        }
+    };
+
+    const likePost = async (postId) => {
+        try {
+            // Actualización optimista veloz
+            setMessages(prev => prev.map(msg => {
+                if (msg.id === postId) {
+                    const isLiked = (msg.likes || []).includes(user.id);
+                    const updatedLikes = isLiked 
+                        ? (msg.likes || []).filter(id => id !== user.id)
+                        : [...(msg.likes || []), user.id];
+                    return { ...msg, likes: updatedLikes };
                 }
-                return { ...msg, likes: updatedLikes };
-            }
-            return msg;
-        }));
+                return msg;
+            }));
+
+            await api.post('/blog/like', { postId });
+        } catch (err) {
+            console.log("Error al dar like", err);
+        }
     };
 
-    /**
-     * Añade un comentario a un post específico.
-     * @param {number|string} postId - ID del post.
-     * @param {string} commentText - Texto del comentario.
-     */
-    const addComment = (postId, commentText) => {
-        if (!user) return;
-        setMessages(prev => prev.map(msg => {
-            if (msg.id === postId) {
-                const newComment = {
-                    id: createId(),
-                    userId: user.id,
-                    userName: user.name,
-                    text: commentText,
-                    time: formatTime()
-                };
-
-                if (msg.senderId !== user.id) {
-                    addNotification(msg.senderId, {
-                        type: 'comment',
-                        from: user.name,
-                        message: 'comentó tu post'
-                    });
-                }
-                return { ...msg, comments: [...(msg.comments || []), newComment] };
-            }
-            return msg;
-        }));
+    const addComment = async (postId, commentText) => {
+        try {
+            const res = await api.post('/blog/comment', { postId, text: commentText });
+             // La respuesta real o el socket actualiza, pero si queremos optimismo puro lo agregamos:
+            // Por consistencia, dejemos que llegue por socket para evitar id conflictos (tarda <200ms igual)
+        } catch (err) {
+            console.log("Error al comentar", err);
+        }
     };
 
-    /**
-     * Envía un mensaje privado a otro usuario.
-     * @param {number|string} targetId - ID del destinatario.
-     * @param {string} text - Contenido del mensaje.
-     */
+    const loadPrivateChat = async (friendId) => {
+        try {
+            const res = await api.get(`/chat/private/${friendId}`);
+            setPrivateMessages(prev => ({
+                ...prev,
+                [friendId]: res.data.messages || []
+            }));
+        } catch (err) {
+            console.log("Error al cargar chat privado", err);
+        }
+    };
+
     const sendPrivateMessage = (targetId, text) => {
-        if (!user) return;
-        const room = [user.id, targetId].sort().join('_');
+        if (!socket) return;
+        const token = localStorage.getItem('token');
+        
+        // UI Optimistico inmediato
+        const tempId = Date.now();
         const newMessage = {
-            id: createId(),
-            senderId: user.id,
-            senderName: user.name,
-            text: text,
-            time: formatTime()
+            id: tempId, senderId: user.id, senderName: user.name, text: text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-
+        
         setPrivateMessages(prev => ({
             ...prev,
-            [room]: [...(prev[room] || []), newMessage]
+            [targetId]: [...(prev[targetId] || []), newMessage]
         }));
-
-        addNotification(targetId, {
-            type: 'message',
-            from: user.name,
-            message: 'te envió un mensaje privado'
-        });
+        
+        socket.emit('send_private_message', { token, friendId: targetId, text });
     };
 
     return (
@@ -302,9 +269,10 @@ export const AppProvider = ({ children }) => {
             user, registeredUsers,
             messages, addPost, likePost, addComment,
             notifications, markNotificationsRead,
-            privateMessages, sendPrivateMessage,
+            privateMessages, sendPrivateMessage, loadPrivateChat,
             registerUser, loginUser, logoutUser,
-            sendRequest, acceptRequest
+            sendRequest, acceptRequest,
+            socket, loadInitialData
         }}>
             {children}
         </AppContext.Provider>

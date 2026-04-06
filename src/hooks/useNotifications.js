@@ -14,12 +14,9 @@ export const useNotifications = () => {
     const notifRef = useRef(null);
 
     /**
-     * Filtra las notificaciones del usuario actual.
+     * El backend ya entrega solo las notificaciones del usuario actual.
      */
-    const myNotifications = useMemo(
-        () => notifications.filter(n => n.targetId === user?.id),
-        [notifications, user?.id]
-    );
+    const myNotifications = notifications || [];
 
     /**
      * Conteo de notificaciones no leídas para el badge.

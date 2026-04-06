@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AppProvider } from './context/AppContext'
+import { AppProvider } from './context/AppContext.jsx'
 import { useApp } from './context/useApp'
 import Navbar from './components/layout/Navbar'
 import Landing from './components/pages/Landing'
