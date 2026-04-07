@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
  * @param {string} initialTab - Pestaña inicial activa ('chat', 'blog', 'private', 'users', 'requests').
  * @returns {Object} Estado y handlers del tablero.
  */
-export const useChatBoard = (initialTab = 'chat') => {
+export const useChatBoard = (initialTab = 'blog') => {
     // ── Pestaña activa ──
     const [activeTab, setActiveTab] = useState(initialTab);
 

@@ -28,13 +28,13 @@ export const useAuth = () => {
         setIsLoading(true);
 
         try {
-            const success = await loginUser(formData.email, formData.password);
-            if (success) {
-                resetForm();
-                navigate('/chat');
-            } else {
-                setError('Credenciales incorrectas');
-            }
+            await loginUser(formData.email, formData.password);
+            resetForm();
+            navigate('/chat');
+        } catch (err) {
+            // El backend retorna 401 con mensaje, lo mostramos al usuario
+            const msg = err?.response?.data?.message;
+            setError(msg || 'Credenciales incorrectas');
         } finally {
             setIsLoading(false);
         }
@@ -56,7 +56,9 @@ export const useAuth = () => {
             resetForm();
             navigate('/chat');
         } catch (err) {
-            setError('El registro falló: el correo o nickname podrían estar en uso');
+            // El backend retorna 409 si el correo o nickname ya existán
+            const msg = err?.response?.data?.message;
+            setError(msg || 'El registro falló. El correo o nickname podrían estar en uso.');
         } finally {
             setIsLoading(false);
         }

@@ -5,6 +5,7 @@ import bcrypt
 import jwt
 import datetime
 import os
+import functools
 from database import fetch_one_dict, fetch_all_dicts, execute_query
 
 app = Flask(__name__)
@@ -30,6 +31,7 @@ def verify_token(token):
         return None
 
 def token_required(f):
+    @functools.wraps(f)
     def decorator(*args, **kwargs):
         token = None
         if 'Authorization' in request.headers:
@@ -42,7 +44,6 @@ def token_required(f):
         if not user_id: return jsonify({'message': 'Token inválido o expirado'}), 401
             
         return f(user_id, *args, **kwargs)
-    decorator.__name__ = f.__name__
     return decorator
 
 def get_user_friends(user_id):
@@ -152,7 +153,28 @@ def mark_notifications_read(user_id):
 @app.route('/api/users', methods=['GET'])
 @token_required
 def get_users(user_id):
+    # Traemos todos los usuarios excepto el actual
     users = fetch_all_dicts("SELECT id, nickname as name, avatar_url as avatar FROM usuarios WHERE id != :uid", uid=user_id)
+    
+    # Traemos todas las relaciones de amistad del usuario actual
+    rels = fetch_all_dicts("SELECT user_id_1, user_id_2, estado FROM amistades WHERE user_id_1 = :uid OR user_id_2 = :uid", uid=user_id)
+    
+    # Mapeamos las relaciones por el ID del "otro" usuario
+    status_map = {}
+    for r in rels:
+        other_id = r['user_id_2'] if r['user_id_1'] == user_id else r['user_id_1']
+        if r['estado'] == 'aceptado':
+            status_map[other_id] = 'friend'
+        elif r['estado'] == 'pendiente':
+            if r['user_id_1'] == user_id:
+                status_map[other_id] = 'pending_sent'
+            else:
+                status_map[other_id] = 'pending_received'
+                
+    # Inyectamos el status en cada usuario
+    for u in users:
+        u['status'] = status_map.get(u['id'], 'none')
+        
     return jsonify(users), 200
 
 @app.route('/api/friends/request', methods=['POST'])
@@ -195,20 +217,41 @@ def get_posts(user_id):
     posts = fetch_all_dicts(
         "SELECT m.id, m.contenido as text, m.fecha_envio as time, u.nickname as sender, u.id as senderId "
         "FROM mensajes m JOIN usuarios u ON m.user_id = u.id "
-        "WHERE m.sala_id = 1 AND m.mensaje_padre_id IS NULL ORDER BY m.id DESC"
+        "WHERE m.sala_id = 1 AND m.mensaje_padre_id IS NULL "
+        "ORDER BY m.id DESC LIMIT 50"
     )
+    if not posts: return jsonify([]), 200
+
+    post_ids = [p['id'] for p in posts]
+    placeholders = ', '.join([f":id{i}" for i in range(len(post_ids))])
+    params = {f"id{i}": post_ids[i] for i in range(len(post_ids))}
+
+    all_likes = fetch_all_dicts(f"SELECT mensaje_id, user_id FROM mensaje_likes WHERE mensaje_id IN ({placeholders})", **params)
+    likes_map = {}
+    for l in all_likes:
+        likes_map.setdefault(l['mensaje_id'], []).append(l['user_id'])
+
+    all_comments = fetch_all_dicts(
+        f"SELECT m.id, m.mensaje_padre_id as parent_id, m.contenido as text, m.fecha_envio as time, u.nickname as userName, u.id as userId "
+        f"FROM mensajes m JOIN usuarios u ON m.user_id = u.id "
+        f"WHERE m.mensaje_padre_id IN ({placeholders}) ORDER BY m.id ASC", **params
+    )
+    comments_map = {}
+    for c in all_comments:
+        c['time'] = c['time'].strftime("%H:%M") if c['time'] else ""
+        if 'userid' in c: c['userId'] = c.pop('userid')
+        if 'username' in c: c['userName'] = c.pop('username')
+        
+        parent = c.pop('parent_id')
+        comments_map.setdefault(parent, []).append(c)
+
     for p in posts:
         p['time'] = p['time'].strftime("%H:%M") if p['time'] else ""
-        likes = fetch_all_dicts("SELECT user_id FROM mensaje_likes WHERE mensaje_id = :mid", mid=p['id'])
-        p['likes'] = [l['user_id'] for l in likes]
-        
-        comments = fetch_all_dicts(
-            "SELECT m.id, m.contenido as text, m.fecha_envio as time, u.nickname as userName, u.id as userId "
-            "FROM mensajes m JOIN usuarios u ON m.user_id = u.id "
-            "WHERE m.mensaje_padre_id = :mid ORDER BY m.id ASC", mid=p['id']
-        )
-        for c in comments: c['time'] = c['time'].strftime("%H:%M") if c['time'] else ""
-        p['comments'] = comments
+        if 'senderid' in p:
+            p['senderId'] = p.pop('senderid')
+
+        p['likes'] = likes_map.get(p['id'], [])
+        p['comments'] = comments_map.get(p['id'], [])
 
     return jsonify(posts), 200
 
@@ -236,8 +279,10 @@ def like_post(user_id):
     
     if ext:
         execute_query("DELETE FROM mensaje_likes WHERE user_id = :uid AND mensaje_id = :mid", uid=user_id, mid=post_id)
+        action = 'unliked'
     else:
         execute_query("INSERT INTO mensaje_likes (user_id, mensaje_id) VALUES (:uid, :mid)", uid=user_id, mid=post_id)
+        action = 'liked'
         
         post_owner = fetch_one_dict("SELECT user_id FROM mensajes WHERE id = :mid", mid=post_id)
         if post_owner and post_owner['user_id'] != user_id:
@@ -246,6 +291,11 @@ def like_post(user_id):
             socketio.emit('notification', {
                 'id': res[0][0], 'type': 'like', 'from': sender['nickname'], 'message': 'le dio me gusta a tu post', 'time': datetime.datetime.now().strftime("%H:%M"), 'read': False
             }, room=f"user_{post_owner['user_id']}")
+
+    # Emitimos a todos los conectados el cambio en el post
+    new_likes = fetch_all_dicts("SELECT user_id FROM mensaje_likes WHERE mensaje_id = :mid", mid=post_id)
+    likes_array = [l['user_id'] for l in new_likes]
+    socketio.emit('update_post_likes', {'postId': post_id, 'likes': likes_array}, room="global_blog")
 
     return jsonify({'liked': not ext}), 200
 
@@ -288,7 +338,12 @@ def get_private_messages(user_id, friend_id):
         "FROM mensajes m JOIN usuarios u ON m.user_id = u.id "
         "WHERE m.sala_id = :sid ORDER BY m.id ASC", sid=sala['id']
     )
-    for m in msgs: m['time'] = m['time'].strftime("%H:%M") if m['time'] else ""
+    for m in msgs: 
+        m['time'] = m['time'].strftime("%H:%M") if m['time'] else ""
+        if 'senderid' in m:
+            m['senderId'] = m.pop('senderid')
+        if 'sendername' in m:
+            m['senderName'] = m.pop('sendername')
     return jsonify({'salaId': sala['id'], 'messages': msgs}), 200
 
 
@@ -349,7 +404,7 @@ def on_send_private(data):
     if data.get('salaId'):
         emit('receive_private_message', msg_data, room=f"sala_{sala_id}")
     else:
-        emit('receive_private_message', msg_data, room=f"user_{user_id}")
+        # Solo emitir al receptor, el emisor ya lo tiene en su estado local
         emit('receive_private_message', msg_data, room=f"user_{friend_id}")
         
     rn, _ = execute_query("INSERT INTO notificaciones (target_user_id, sender_user_id, tipo) VALUES (:tid, :uid, 'message') RETURNING id", tid=friend_id, uid=user_id)
@@ -358,4 +413,4 @@ def on_send_private(data):
     }, room=f"user_{friend_id}")
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5000, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)

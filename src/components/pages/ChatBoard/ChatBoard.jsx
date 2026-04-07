@@ -6,7 +6,6 @@ import Balatro from '../../ui/Balatro';
 import ElectricBorder from '../../ui/ElectricBorder';
 import PrivateChat from './PrivateChat';
 import Sidebar from './Sidebar';
-import GlobalChat from './GlobalChat';
 import BlogSection from './BlogSection';
 import PrivateList from './PrivateList';
 import DiscoverUsers from './DiscoverUsers';
@@ -22,11 +21,11 @@ import '../../../styles/components/pages/ChatBoard/ChatBoard.css';
  * @param {Object} props
  * @param {string} [props.initialTab='chat'] - Pestaña activa inicialmente.
  */
-export default function ChatBoard({ initialTab = 'chat' }) {
+export default function ChatBoard({ initialTab = 'blog' }) {
   const { user, theme } = useApp();
 
   const {
-    messages, reversedMessages, newMessage, activeComments, commentText,
+    reversedMessages, newMessage, activeComments, commentText,
     setNewMessage, handleSendPost, handleSendComment,
     toggleComments, updateCommentText, likePost, isLikedByUser,
   } = useChat();
@@ -55,16 +54,7 @@ export default function ChatBoard({ initialTab = 'chat' }) {
     }
 
     switch (activeTab) {
-      case 'chat':
-        return (
-          <GlobalChat
-            messages={messages}
-            newMessage={newMessage}
-            onNewMessageChange={setNewMessage}
-            onSendPost={handleSendPost}
-            userId={user.id}
-          />
-        );
+
       case 'blog':
         return (
           <BlogSection

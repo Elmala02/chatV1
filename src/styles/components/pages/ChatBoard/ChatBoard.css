@@ -41,6 +41,8 @@
   flex-direction: column;
   background: var(--bg-accent);
   position: relative;
+  height: 100%;
+  overflow: hidden; /* Crucial to enable child scrolling */
 }
 
 /* ── Shared section styles ── */
@@ -49,6 +51,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Added to keep header fixed if we add one, or to constrain list */
 }
 
 .users-list {

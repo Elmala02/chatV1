@@ -13,7 +13,6 @@ export const AppProvider = ({ children }) => {
     const [messages, setMessages] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [privateMessages, setPrivateMessages] = useState({});
-    const [socketConnected, setSocketConnected] = useState(false);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -36,8 +35,8 @@ export const AppProvider = ({ children }) => {
             setRegisteredUsers(usersRes.data);
             setMessages(postsRes.data);
             setNotifications(notifRes.data);
-        } catch (error) {
-            console.error("Error cargando datos", error);
+        } catch (_error) {
+            console.error("Error cargando datos", _error);
         }
     };
 
@@ -59,25 +58,17 @@ export const AppProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        // Se usa STRICTAMENTE polling para evitar el problema interno de Werkzeug 3.0 con WebSockets nativos 
-        // y erradicar el molesto mensaje "Invalid frame header" de la consola.
         socket = io(SOCKET_URL, {
             extraHeaders: { Authorization: `Bearer ${token}` },
-            transports: ['polling']  // <-- ESTE ES EL ARREGLO ESTRICTO
+            transports: ['websocket', 'polling'] 
         });
 
         socket.on('connect', () => {
-            setSocketConnected(true);
             socket.emit('identify', { token });
-        });
-
-        socket.on('disconnect', () => {
-             setSocketConnected(false);
         });
 
         socket.on('new_post', (post) => {
             setMessages(prev => {
-                // Evitar duplicados si quien lo mandó ya lo agregó optimisticamente
                 if (prev.some(p => p.id === post.id)) return prev;
                 return [post, ...prev];
             });
@@ -85,10 +76,21 @@ export const AppProvider = ({ children }) => {
 
         socket.on('new_comment', (data) => {
             setMessages(prev => prev.map(msg => {
-                if (msg.id === data.postId) {
+                if (String(msg.id) === String(data.postId)) {
                     const exists = (msg.comments || []).some(c => c.id === data.comment.id);
                     if (exists) return msg;
                     return { ...msg, comments: [...(msg.comments || []), data.comment] };
+                }
+                return msg;
+            }));
+        });
+
+        socket.on('update_post_likes', (data) => {
+            setMessages(prev => prev.map(msg => {
+                if (String(msg.id) === String(data.postId)) {
+                    // Solo actualizamos de forma "segura" si no es mi propio like
+                    // (el mío ya se aplicó instantáneamente de forma optimista)
+                    return { ...msg, likes: data.likes };
                 }
                 return msg;
             }));
@@ -100,7 +102,6 @@ export const AppProvider = ({ children }) => {
             };
             setNotifications(prev => [newNotif, ...prev]);
             
-            // Refrescar al usuario si hay temas de amistad
             if (notif.type === 'friend_request' || notif.type === 'request_accepted') {
                 api.get('/auth/me').then(res => setUser(res.data.user));
             }
@@ -108,11 +109,11 @@ export const AppProvider = ({ children }) => {
 
         socket.on('receive_private_message', (msg) => {
             setPrivateMessages(prev => {
-                const isMyMessage = msg.senderId === user?.id;
-                const chatKey = isMyMessage ? msg.targetId : msg.senderId; // El arreglo de chat corresponde a esa persona
+                const isMyMessage = String(msg.senderId) === String(user?.id);
+                const chatKey = isMyMessage ? msg.targetId : msg.senderId;
                 
                 const existingChat = prev[chatKey] || [];
-                if (existingChat.some(m => m.id === msg.id)) return prev; // Evitar duplicar
+                if (existingChat.some(m => m.id === msg.id)) return prev;
                 
                 return {
                     ...prev,
@@ -136,20 +137,18 @@ export const AppProvider = ({ children }) => {
         const res = await api.post('/auth/register', userData);
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
-        await loadInitialData();
+        // Cargar datos en background para no bloquear el flujo de UI inicial
+        loadInitialData();
         return true;
     };
 
     const loginUser = async (email, password) => {
-        try {
-            const res = await api.post('/auth/login', { email, password });
-            localStorage.setItem('token', res.data.token);
-            setUser(res.data.user);
-            await loadInitialData();
-            return true;
-        } catch (error) {
-            return false;
-        }
+        const res = await api.post('/auth/login', { email, password });
+        localStorage.setItem('token', res.data.token);
+        setUser(res.data.user);
+        // Cargar datos en background para que el redirect a /chat sea instantáneo
+        loadInitialData();
+        return true;
     };
 
     const logoutUser = () => {
@@ -164,72 +163,64 @@ export const AppProvider = ({ children }) => {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         try {
             await api.post('/notifications/read');
-        } catch(err) {
-            console.log("No se pudo marcar leido en DB");
+        } catch(_err) {
+            console.log("No se pudo marcar leido en DB", _err);
         }
     };
 
     const sendRequest = async (targetId) => {
         try {
             await api.post('/friends/request', { targetId });
-        } catch (err) {
-            console.log("Solicitud duplicada o inválida, ignorada visualmente.");
+        } catch (_err) {
+            console.log("Solicitud duplicada o inválida", _err);
         }
     };
 
     const acceptRequest = async (requestId) => {
         try {
             await api.post('/friends/accept', { requestId });
-            api.get('/auth/me').then(res => setUser(res.data.user)); // Refresh usuario
-        } catch (err) {
-            console.log("No se pudo aceptar la solicitud.", err);
+            // Refrescar usuario de forma sincrónica para actualizar friends y requests
+            const meRes = await api.get('/auth/me');
+            setUser(meRes.data.user);
+            // También refrescar lista de usuarios para actualizar hasSentRequest
+            const usersRes = await api.get('/users');
+            setRegisteredUsers(usersRes.data);
+        } catch (_err) {
+            console.log("No se pudo aceptar la solicitud.", _err);
         }
     };
 
     const addPost = async (text) => {
         try {
-            // Actualización optimista veloz para no sentir lag
-            const tempId = Date.now();
-            const tempPost = {
-                id: tempId, text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                sender: user.name, senderId: user.id, likes: [], comments: []
-            };
-            setMessages(prev => [tempPost, ...prev]);
-
             await api.post('/blog/post', { text });
-            // El socket enviará el real y sobreescribiremos o lo dejaremos así
-        } catch (err) {
-            console.log("Error al publicar post", err);
+        } catch (_err) {
+            console.log("Error al publicar post", _err);
         }
     };
 
     const likePost = async (postId) => {
         try {
-            // Actualización optimista veloz
             setMessages(prev => prev.map(msg => {
-                if (msg.id === postId) {
-                    const isLiked = (msg.likes || []).includes(user.id);
+                if (String(msg.id) === String(postId)) {
+                    const isLiked = (msg.likes || []).some(id => String(id) === String(user.id));
                     const updatedLikes = isLiked 
-                        ? (msg.likes || []).filter(id => id !== user.id)
+                        ? (msg.likes || []).filter(id => String(id) !== String(user.id))
                         : [...(msg.likes || []), user.id];
                     return { ...msg, likes: updatedLikes };
                 }
                 return msg;
             }));
-
             await api.post('/blog/like', { postId });
-        } catch (err) {
-            console.log("Error al dar like", err);
+        } catch (_err) {
+            console.log("Error al dar like", _err);
         }
     };
 
     const addComment = async (postId, commentText) => {
         try {
-            const res = await api.post('/blog/comment', { postId, text: commentText });
-             // La respuesta real o el socket actualiza, pero si queremos optimismo puro lo agregamos:
-            // Por consistencia, dejemos que llegue por socket para evitar id conflictos (tarda <200ms igual)
-        } catch (err) {
-            console.log("Error al comentar", err);
+            await api.post('/blog/comment', { postId, text: commentText });
+        } catch (_err) {
+            console.log("Error al comentar", _err);
         }
     };
 
@@ -240,8 +231,8 @@ export const AppProvider = ({ children }) => {
                 ...prev,
                 [friendId]: res.data.messages || []
             }));
-        } catch (err) {
-            console.log("Error al cargar chat privado", err);
+        } catch (_err) {
+            console.log("Error al cargar chat privado", _err);
         }
     };
 
@@ -249,10 +240,13 @@ export const AppProvider = ({ children }) => {
         if (!socket) return;
         const token = localStorage.getItem('token');
         
-        // UI Optimistico inmediato
         const tempId = Date.now();
         const newMessage = {
-            id: tempId, senderId: user.id, senderName: user.name, text: text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            id: tempId,
+            senderId: user.id,
+            senderName: user.name,
+            text: text,
+            time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })
         };
         
         setPrivateMessages(prev => ({

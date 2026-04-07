@@ -11,10 +11,24 @@
 }
 
 .discover-list {
+  flex: 1; 
+  min-height: 0; 
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Un poco más angostos */
+  grid-auto-rows: min-content; /* IMPORTANTE: evita que las tarjetas se estiren */
+  gap: 1rem; /* Reducido de 1.5rem */
   overflow-y: auto;
+  padding-right: 10px; 
+}
+
+.discover-status-text {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: var(--bg-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  font-weight: 600;
 }
 
 .discover-add-btn {

@@ -1,10 +1,10 @@
 .blog-section {
   padding: 2rem;
   height: 100%;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  overflow: hidden; /* Added to keep scroll internal to children */
 }
 
 /* ── Compositor de posts ── */
@@ -33,6 +33,12 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  flex: 1; /* Agregado para que tome el espacio restante */
+  overflow-y: auto; /* El scroll ahora está aquí */
+  min-height: 0; /* Necesario para que el scroll funcione en flex items */
+  padding-right: 1.5rem; /* Espacio para scrollbar sin apretar el contenido */
+  padding-bottom: 2rem;
+  scrollbar-gutter: stable; /* Evita saltos de layout cuando aparece el scroll */
 }
 
 /* ── Post Card ── */

@@ -44,7 +44,7 @@ export default function PrivateChat({ friend, onBack }) {
               key={msg.id}
               text={msg.text}
               time={msg.time}
-              isOwn={msg.senderId === user.id}
+              isOwn={String(msg.senderId) === String(user.id)}
               variant="private"
             />
           ))

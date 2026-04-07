@@ -12,7 +12,6 @@ import {
  * @property {boolean} clearFriend - Si es true, oculta el chat privado actual al cambiar.
  */
 export const SIDEBAR_TABS = [
-    { id: 'chat', icon: MessageCircle, label: 'Chat Global', clearFriend: true },
     { id: 'blog', icon: Sparkles, label: 'Blog Social', clearFriend: true },
     { id: 'private', icon: Lock, label: 'Privado', clearFriend: false },
     { id: 'users', icon: Search, label: 'Descubrir', clearFriend: true },
@@ -28,7 +27,7 @@ export const SIDEBAR_TABS = [
  */
 export const NAV_LINKS = [
     { to: '/', icon: Home, label: 'Inicio', requiresAuth: false },
-    { to: '/chat', icon: MessageSquare, label: 'Chat', requiresAuth: true },
+    { to: '/chat', icon: Sparkles, label: 'Social', requiresAuth: true },
 ];
 
 /**

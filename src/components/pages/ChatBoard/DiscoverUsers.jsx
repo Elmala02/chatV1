@@ -16,8 +16,6 @@ export default function DiscoverUsers({
   searchTerm,
   onSearchChange,
   users,
-  isFriend,
-  hasSentRequest,
   onSendRequest,
 }) {
   return (
@@ -35,17 +33,20 @@ export default function DiscoverUsers({
           <UserCard
             key={u.id}
             user={u}
-            subtitle={isFriend(u.id) ? 'Amigos ✨' : u.email}
+            subtitle={u.status === 'friend' ? 'Amigos ✨' : 'Disponible para conectar'}
             actions={
-              isFriend(u.id) ? (
+              u.status === 'friend' ? (
                 <div className="discover-friends-badge"><Check size={16} /></div>
+              ) : u.status === 'pending_sent' ? (
+                <span className="discover-status-text">Solicitud enviada</span>
+              ) : u.status === 'pending_received' ? (
+                <span className="discover-status-text">Te envió solicitud</span>
               ) : (
                 <button
-                  className={`discover-add-btn ${hasSentRequest(u) ? 'sent' : ''}`}
+                  className="discover-add-btn"
                   onClick={() => onSendRequest(u.id)}
-                  disabled={hasSentRequest(u)}
                 >
-                  {hasSentRequest(u) ? <Check size={18} /> : <UserPlus size={18} />}
+                  <UserPlus size={18} />
                 </button>
               )
             }
