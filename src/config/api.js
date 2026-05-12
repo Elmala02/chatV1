@@ -1,14 +1,22 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://opm-env.eba-ywfhqwtf.us-east-1.elasticbeanstalk.com/api';
 
 const api = axios.create({
     baseURL: API_URL,
 });
 
+// Función auxiliar para leer cookies
+const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
 // Interceptor para inyectar token en headers
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
+    const token = getCookie('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }

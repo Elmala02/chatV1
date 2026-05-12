@@ -3,7 +3,7 @@ import { AppContext } from './appContext';
 import { io } from 'socket.io-client';
 import api from '../config/api';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = 'http://opm-env.eba-ywfhqwtf.us-east-1.elasticbeanstalk.com';
 let socket;
 
 export const AppProvider = ({ children }) => {
@@ -40,14 +40,22 @@ export const AppProvider = ({ children }) => {
         }
     };
 
+    // Función auxiliar para leer cookies (puede replicarse)
+    const getCookie = (name) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = getCookie('token');
         if (token) {
             api.get('/auth/me').then(res => {
                 setUser(res.data.user);
                 loadInitialData();
             }).catch(() => {
-                localStorage.removeItem('token');
+                document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             });
         }
     }, []);
@@ -55,12 +63,12 @@ export const AppProvider = ({ children }) => {
     // --- SOCKET IO HANDLERS ---
 
     const setupSocket = useCallback(() => {
-        const token = localStorage.getItem('token');
+        const token = getCookie('token');
         if (!token) return;
 
         socket = io(SOCKET_URL, {
             extraHeaders: { Authorization: `Bearer ${token}` },
-            transports: ['websocket', 'polling'] 
+            transports: ['websocket', 'polling']
         });
 
         socket.on('connect', () => {
@@ -101,7 +109,7 @@ export const AppProvider = ({ children }) => {
                 id: crypto.randomUUID(), read: false, ...notif
             };
             setNotifications(prev => [newNotif, ...prev]);
-            
+
             if (notif.type === 'friend_request' || notif.type === 'request_accepted') {
                 api.get('/auth/me').then(res => setUser(res.data.user));
             }
@@ -111,17 +119,17 @@ export const AppProvider = ({ children }) => {
             setPrivateMessages(prev => {
                 const isMyMessage = String(msg.senderId) === String(user?.id);
                 const chatKey = isMyMessage ? msg.targetId : msg.senderId;
-                
+
                 const existingChat = prev[chatKey] || [];
                 if (existingChat.some(m => m.id === msg.id)) return prev;
-                
+
                 return {
                     ...prev,
                     [chatKey]: [...existingChat, msg]
                 };
             });
         });
-        
+
     }, [user?.id]);
 
     useEffect(() => {
@@ -135,7 +143,8 @@ export const AppProvider = ({ children }) => {
 
     const registerUser = async (userData) => {
         const res = await api.post('/auth/register', userData);
-        localStorage.setItem('token', res.data.token);
+        // Expiración de 7 días igual que en el backend
+        document.cookie = `token=${res.data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
         setUser(res.data.user);
         // Cargar datos en background para no bloquear el flujo de UI inicial
         loadInitialData();
@@ -144,7 +153,7 @@ export const AppProvider = ({ children }) => {
 
     const loginUser = async (email, password) => {
         const res = await api.post('/auth/login', { email, password });
-        localStorage.setItem('token', res.data.token);
+        document.cookie = `token=${res.data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
         setUser(res.data.user);
         // Cargar datos en background para que el redirect a /chat sea instantáneo
         loadInitialData();
@@ -153,7 +162,7 @@ export const AppProvider = ({ children }) => {
 
     const logoutUser = () => {
         setUser(null);
-        localStorage.removeItem('token');
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         if (socket) socket.disconnect();
     };
 
@@ -163,7 +172,7 @@ export const AppProvider = ({ children }) => {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         try {
             await api.post('/notifications/read');
-        } catch(_err) {
+        } catch (_err) {
             console.log("No se pudo marcar leido en DB", _err);
         }
     };
@@ -203,7 +212,7 @@ export const AppProvider = ({ children }) => {
             setMessages(prev => prev.map(msg => {
                 if (String(msg.id) === String(postId)) {
                     const isLiked = (msg.likes || []).some(id => String(id) === String(user.id));
-                    const updatedLikes = isLiked 
+                    const updatedLikes = isLiked
                         ? (msg.likes || []).filter(id => String(id) !== String(user.id))
                         : [...(msg.likes || []), user.id];
                     return { ...msg, likes: updatedLikes };
@@ -238,8 +247,8 @@ export const AppProvider = ({ children }) => {
 
     const sendPrivateMessage = (targetId, text) => {
         if (!socket) return;
-        const token = localStorage.getItem('token');
-        
+        const token = getCookie('token');
+
         const tempId = Date.now();
         const newMessage = {
             id: tempId,
@@ -248,12 +257,12 @@ export const AppProvider = ({ children }) => {
             text: text,
             time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })
         };
-        
+
         setPrivateMessages(prev => ({
             ...prev,
             [targetId]: [...(prev[targetId] || []), newMessage]
         }));
-        
+
         socket.emit('send_private_message', { token, friendId: targetId, text });
     };
 

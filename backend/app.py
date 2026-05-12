@@ -62,6 +62,11 @@ def get_user_requests(user_id):
     )
     return [r['user_id_1'] for r in res]
 
+# --- RUTA DE SALUD PARA AWS ---
+@app.route('/')
+def health_check():
+    return jsonify({'status': 'ok', 'message': 'Backend is running'}), 200
+
 # --- RUTAS DE AUTH ---
 
 @app.route('/api/auth/register', methods=['POST'])
@@ -413,4 +418,5 @@ def on_send_private(data):
     }, room=f"user_{friend_id}")
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host="0.0.0.0", port=5000, allow_unsafe_werkzeug=True)
+    port = int(os.environ.get("PORT", 8000))
+    socketio.run(app, debug=True, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
