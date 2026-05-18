@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://d1wh3jz8xigb4x.cloudfront.net/api';
+const API_URL = 'https://d1wh3jz8xigb4x.cloudfront.net/api';
 
 const api = axios.create({
     baseURL: API_URL,

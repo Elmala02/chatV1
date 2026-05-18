@@ -3,7 +3,7 @@ import { AppContext } from './appContext';
 import { io } from 'socket.io-client';
 import api from '../config/api';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://d1wh3jz8xigb4x.cloudfront.net';
+const SOCKET_URL = 'https://d1wh3jz8xigb4x.cloudfront.net';
 let socket;
 
 export const AppProvider = ({ children }) => {
