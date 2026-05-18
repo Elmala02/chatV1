@@ -63,12 +63,12 @@
 
 @media (max-width: 768px) {
   .board-container {
-    padding: 70px 0.25rem 0.5rem; /* Maximize height on mobile */
+    padding: 85px 0.25rem 0.5rem; /* Maximize height on mobile and clear 70px navbar */
     height: 100vh;
   }
 
   .electric-border-wrapper {
-    height: calc(100vh - 80px);
+    height: calc(100vh - 95px);
     border-radius: 15px; /* Slightly smaller border radius on mobile */
   }
 
