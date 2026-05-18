@@ -24,7 +24,7 @@ export default function Sidebar({ activeTab, onTabChange, requestCount, logo }) 
             onClick={() => onTabChange(id, clearFriend)}
           >
             {createElement(icon, { size: 20 })}
-            {label}
+            <span className="board-sidebar__label">{label}</span>
             {id === 'requests' && requestCount > 0 && (
               <span className="board-sidebar__badge">{requestCount}</span>
             )}

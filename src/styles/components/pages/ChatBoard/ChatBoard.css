@@ -62,11 +62,31 @@
 }
 
 @media (max-width: 768px) {
+  .board-container {
+    padding: 70px 0.25rem 0.5rem; /* Maximize height on mobile */
+    height: 100vh;
+  }
+
+  .electric-border-wrapper {
+    height: calc(100vh - 80px);
+    border-radius: 15px; /* Slightly smaller border radius on mobile */
+  }
+
   .board-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr; /* Top-bar navigation and bottom-content layout */
   }
 
   .board-sidebar {
-    display: none;
+    display: flex; /* Sidebar is now visible as a row bar! */
+  }
+
+  .users-section {
+    padding: 1rem;
+  }
+
+  .users-list {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 }
