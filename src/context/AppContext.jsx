@@ -8,7 +8,14 @@ let socket;
 
 export const AppProvider = ({ children }) => {
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        try {
+            const saved = localStorage.getItem('user');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    });
     const [registeredUsers, setRegisteredUsers] = useState([]);
     const [messages, setMessages] = useState([]);
     const [notifications, setNotifications] = useState([]);
@@ -52,11 +59,18 @@ export const AppProvider = ({ children }) => {
         const token = getCookie('token');
         if (token) {
             api.get('/auth/me').then(res => {
-                setUser(res.data.user);
+                const userData = res.data.user;
+                setUser(userData);
+                localStorage.setItem('user', JSON.stringify(userData));
                 loadInitialData();
             }).catch(() => {
                 document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                localStorage.removeItem('user');
+                setUser(null);
             });
+        } else {
+            localStorage.removeItem('user');
+            setUser(null);
         }
     }, []);
 
@@ -145,7 +159,9 @@ export const AppProvider = ({ children }) => {
         const res = await api.post('/auth/register', userData);
         // Expiración de 7 días igual que en el backend
         document.cookie = `token=${res.data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
-        setUser(res.data.user);
+        const newUser = res.data.user;
+        setUser(newUser);
+        localStorage.setItem('user', JSON.stringify(newUser));
         // Cargar datos en background para no bloquear el flujo de UI inicial
         loadInitialData();
         return true;
@@ -154,7 +170,9 @@ export const AppProvider = ({ children }) => {
     const loginUser = async (email, password) => {
         const res = await api.post('/auth/login', { email, password });
         document.cookie = `token=${res.data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
-        setUser(res.data.user);
+        const loggedUser = res.data.user;
+        setUser(loggedUser);
+        localStorage.setItem('user', JSON.stringify(loggedUser));
         // Cargar datos en background para que el redirect a /chat sea instantáneo
         loadInitialData();
         return true;
@@ -162,6 +180,7 @@ export const AppProvider = ({ children }) => {
 
     const logoutUser = () => {
         setUser(null);
+        localStorage.removeItem('user');
         document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         if (socket) socket.disconnect();
     };
