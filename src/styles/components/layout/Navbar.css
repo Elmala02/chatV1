@@ -205,6 +205,10 @@
     display: none;
   }
 
+  .nav-content {
+    justify-content: space-between;
+  }
+
   .nav-container,
   .nav-container.scrolled {
     height: 70px;
@@ -238,5 +242,27 @@
 
   .nav-item.active::after {
     display: none;
+  }
+
+  .nav-actions {
+    gap: 0.8rem;
+  }
+
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .user-profile {
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  .login-btn {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
   }
 }
